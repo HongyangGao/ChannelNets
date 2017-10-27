@@ -1,5 +1,5 @@
 import tensorflow as tf
-import ops
+from utils import ops
 
 
 class MobileNet(object):

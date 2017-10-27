@@ -72,5 +72,6 @@ def main(_):
 
 if __name__ == '__main__':
     # configure which gpu or cpu to use
-    os.environ['CUDA_VISIBLE_DEVICES'] = '7,8'
+    os.environ['TENSORPACK_PIPEDIR'] = '/tmp'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '4,1,2,3,0,5,6'
     tf.app.run()

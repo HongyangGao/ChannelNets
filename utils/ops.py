@@ -56,10 +56,12 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train, use_rev_conv=False
     return outs
 
 
-def out_block(outs, scope, class_num, is_train):
+def out_block(outs, scope, class_num, is_train, data_format='NCHW'):
     kernel = outs.shape.as_list()[1:-1]
-    outs = pool2d(outs, kernel, scope+'/pool', is_train, 'VALID')
-    outs = dense(outs, class_num, scope)
+    outs = pool2d(
+        outs, kernel, scope+'/pool', is_train, 'VALID',
+        data_format=data_format)
+    outs = dense(outs, class_num, scope, data_format=data_format)
     return outs
 
 
@@ -95,27 +97,30 @@ def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True, padding='
     return outs
 
 
-def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True, weight_decay=2e-4):
+def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True, weight_decay=2e-4,
+        data_format='NCHW'):
+    df = 'channels_last' if data_format == 'NCHW' else 'channels_first'
     outs = tf.layers.conv1d(
         outs, num_outs, kernel, stride, padding='same', use_bias=False,
-        kernel_initializer=tf.random_normal_initializer(),
+        kernel_initializer=tf.random_normal_initializer(), data_format=df,
         name=scope+'/conv1d')
     if keep_r < 1.0:
         outs = tf.contrib.layers.dropout(
             outs, keep_r, is_training=train, scope=scope)
-    return batch_norm(outs, scope, train)
+    return batch_norm(outs, scope, train, data_format=data_format)
 
 
-def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True, weight_decay=2e-4):
+def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True, weight_decay=2e-4,
+        data_format='NCHW'):
     l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
     outs = tf.contrib.layers.conv2d(
-        outs, num_outs, kernel, scope=scope, stride=stride,
+        outs, num_outs, kernel, scope=scope, stride=stride, data_format=data_format,
         weights_initializer=tf.truncated_normal_initializer(stddev=0.09),
         weights_regularizer=l2_func, biases_initializer=None, activation_fn=None)
     if keep_r < 1.0:
         outs = tf.contrib.layers.dropout(
             outs, keep_r, is_training=train, scope=scope)
-    return batch_norm(outs, scope, train)
+    return batch_norm(outs, scope, train, data_format=data_format)
 
 
 def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True, weight_decay=2e-4,
@@ -131,18 +136,20 @@ def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True, weight_decay=
     if keep_r < 1.0:
         outs = tf.contrib.layers.dropout(
             outs, keep_r, is_training=train, scope=scope)
-    return batch_norm(outs, scope, train, act_fn)
+    return batch_norm(outs, scope, train, act_fn, data_format=data_format)
 
 
-def pool2d(outs, kernel, scope, train, padding='SAME'):
+def pool2d(outs, kernel, scope, train, padding='SAME', data_format='NCHW'):
     outs = tf.contrib.layers.avg_pool2d(
-        outs, kernel, scope=scope, padding=padding)
-    return batch_norm(outs, scope, train)
+        outs, kernel, scope=scope, padding=padding,
+        data_format=data_format)
+    return batch_norm(outs, scope, train, data_format=data_format)
 
 
-def dense(outs, dim, scope, weight_decay=2e-4):
+def dense(outs, dim, scope, weight_decay=2e-4, data_format='NCHW'):
     l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
-    outs = tf.squeeze(outs, axis=[1, 2], name=scope+'/squeeze')
+    axis = [data_format.index('H'), data_format.index('H')]
+    outs = tf.squeeze(outs, axis=axis, name=scope+'/squeeze')
     outs = tf.contrib.layers.fully_connected(
         outs, dim, activation_fn=None, scope=scope+'/dense',
         weights_regularizer=l2_func)
@@ -155,10 +162,11 @@ def layer_norm(outs, scope):
     return lrelu(outs, scope+'/lrelu')
 
 
-def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6):
+def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6, data_format='NCHW'):
     return tf.contrib.layers.batch_norm(
         outs, decay=0.9997, scale=True, activation_fn=act_fn,
-        epsilon=1e-3, is_training=is_training, scope=scope+'/batch_norm')
+        epsilon=1e-3, is_training=is_training, data_format=data_format,
+        scope=scope+'/batch_norm')
 
 
 def lrelu(x, name='lrelu'):

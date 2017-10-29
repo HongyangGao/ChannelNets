@@ -13,7 +13,7 @@ from tensorpack.dataflow import imgaug, FakeData
 from tensorpack.tfutils import argscope, get_model_loader
 from tensorpack.utils.gpu import get_nr_gpu
 
-from imgnet_util import (
+from utils.imgnet_util import (
     fbresnet_augmentor, get_imagenet_dataflow, ImageNetModel,
     eval_on_ILSVRC12)
 

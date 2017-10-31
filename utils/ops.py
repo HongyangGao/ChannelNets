@@ -23,7 +23,8 @@ def single_block(outs, block_num, keep_r, is_train, scope, data_format, *args):
     return outs
 
 
-def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format, group, *args):
+def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format,
+                       group, *args):
     results = []
     split_outs = tf.split(outs, group, 3, name=scope+'/split')
     for g in range(group):
@@ -34,7 +35,8 @@ def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format, gr
     return tf.add(outs, results, name=scope+'/add')
 
 
-def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format, group, *args):
+def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
+                     group, *args):
     num_outs = int(outs.shape[3].value/group)
     results = []
     for g in range(group):
@@ -48,8 +50,8 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format, grou
     return tf.add(outs, results, name=scope+'/add')
 
 
-def dw_block(outs, num_outs, stride, scope, keep_r, is_train, use_rev_conv=False,
-        data_format='NHWC'):
+def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
+             use_rev_conv=False, data_format='NHWC'):
     outs = dw_conv2d(
         outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
         data_format=data_format)
@@ -64,7 +66,7 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train, use_rev_conv=False
 
 
 def out_block(outs, scope, class_num, is_train, data_format='NHWC'):
-    axes = [2, 3] if data_format=='NCHW' else [1, 2]
+    axes = [2, 3] if data_format == 'NCHW' else [1, 2]
     outs = tf.reduce_mean(outs, axes, name=scope+'/pool')
     outs = dense(outs, class_num, scope, data_format=data_format)
     return outs
@@ -73,7 +75,8 @@ def out_block(outs, scope, class_num, is_train, data_format='NHWC'):
 def conv_out_block(outs, scope, class_num, is_train):
     kernel = (3, 3, 9)
     for i in range(3):
-        outs = dw_conv2d(outs, (3, 3), 1, scope+'/dw_conv_%s' % i, act_fn=lrelu)
+        outs = dw_conv2d(
+            outs, (3, 3), 1, scope+'/dw_conv_%s' % i, act_fn=lrelu)
         if i == 2:
             act_fn = None
         else:
@@ -85,8 +88,8 @@ def conv_out_block(outs, scope, class_num, is_train):
     return outs
 
 
-def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True, padding='SAME',
-        weight_decay=2e-4, act_fn=tf.nn.relu6):
+def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
+                padding='SAME', weight_decay=2e-4, act_fn=tf.nn.relu6):
     stride = int(outs.shape[3].value/num_outs)
     outs = tf.expand_dims(outs, axis=-1, name=scope+'/expand_dims')
     shape = list(kernel) + [1, 1]
@@ -102,8 +105,8 @@ def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True, padding='
     return outs
 
 
-def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True, weight_decay=2e-4,
-        data_format='NHWC'):
+def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
+           weight_decay=2e-4, data_format='NHWC'):
     df = 'channels_last' if data_format == 'NCHW' else 'channels_first'
     outs = tf.layers.conv1d(
         outs, num_outs, kernel, stride, padding='same', use_bias=False,
@@ -115,21 +118,22 @@ def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True, weig
     return batch_norm(outs, scope, train, data_format=data_format)
 
 
-def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True, weight_decay=2e-4,
-        data_format='NHWC'):
+def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
+           weight_decay=2e-4, data_format='NHWC'):
     l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
     outs = tf.contrib.layers.conv2d(
-        outs, num_outs, kernel, scope=scope, stride=stride, data_format=data_format,
+        outs, num_outs, kernel, scope=scope, stride=stride,
+        data_format=data_format, activation_fn=None,
         weights_initializer=tf.truncated_normal_initializer(stddev=0.09),
-        weights_regularizer=l2_func, biases_initializer=None, activation_fn=None)
+        weights_regularizer=l2_func, biases_initializer=None)
     if keep_r < 1.0:
         outs = tf.contrib.layers.dropout(
             outs, keep_r, is_training=train, scope=scope)
     return batch_norm(outs, scope, train, data_format=data_format)
 
 
-def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True, weight_decay=2e-4,
-        act_fn=tf.nn.relu, data_format='NHWC'):
+def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True,
+              weight_decay=2e-4, act_fn=tf.nn.relu, data_format='NHWC'):
     l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
     shape = list(kernel)+[outs.shape[data_format.index('C')].value, 1]
     weights = tf.get_variable(
@@ -149,17 +153,8 @@ def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True, weight_decay=
     return batch_norm(outs, scope, train, act_fn, data_format=data_format)
 
 
-def pool2d(outs, kernel, scope, train, padding='SAME', data_format='NHWC'):
-    outs = tf.contrib.layers.avg_pool2d(
-        outs, kernel, scope=scope, padding=padding,
-        data_format=data_format)
-    return batch_norm(outs, scope, train, data_format=data_format)
-
-
 def dense(outs, dim, scope, weight_decay=2e-4, data_format='NHWC'):
     l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
-    #axis = [data_format.index('H'), data_format.index('H')]
-    #outs = tf.squeeze(outs, axis=axis, name=scope+'/squeeze')
     outs = tf.contrib.layers.fully_connected(
         outs, dim, activation_fn=None, scope=scope+'/dense',
         weights_regularizer=l2_func)
@@ -172,7 +167,8 @@ def layer_norm(outs, scope):
     return lrelu(outs, scope+'/lrelu')
 
 
-def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6, data_format='NHWC'):
+def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6,
+               data_format='NHWC'):
     return tf.contrib.layers.batch_norm(
         outs, decay=0.9997, scale=True, activation_fn=act_fn,
         epsilon=1e-3, is_training=is_training, data_format=data_format,

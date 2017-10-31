@@ -157,7 +157,7 @@ def compute_loss_and_error(logits, label):
 
 
 class ImageNetModel(ModelDesc):
-    weight_decay = 1e-4
+    weight_decay = 4e-5
 
     """
     uint8 instead of float32 is used as input type to reduce copy overhead.

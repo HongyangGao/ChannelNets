@@ -89,13 +89,13 @@ def conv_out_block(outs, scope, class_num, is_train):
 
 
 def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
-                padding='SAME', weight_decay=2e-4, act_fn=tf.nn.relu6):
+                padding='SAME', act_fn=tf.nn.relu6):
     stride = int(outs.shape[3].value/num_outs)
     outs = tf.expand_dims(outs, axis=-1, name=scope+'/expand_dims')
     shape = list(kernel) + [1, 1]
     weights = tf.get_variable(
         scope+'/conv/weights', shape,
-        initializer=tf.random_normal_initializer())
+        initializer=tf.truncated_normal_initializer(stddev=0.09))
     outs = tf.nn.conv3d(
         outs, weights, (1, 1, 1, stride, 1), padding=padding,
         name=scope+'/conv')
@@ -106,12 +106,12 @@ def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
 
 
 def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
-           weight_decay=2e-4, data_format='NHWC'):
+           data_format='NHWC'):
     df = 'channels_last' if data_format == 'NCHW' else 'channels_first'
     outs = tf.layers.conv1d(
         outs, num_outs, kernel, stride, padding='same', use_bias=False,
-        kernel_initializer=tf.random_normal_initializer(), data_format=df,
-        name=scope+'/conv1d')
+        kernel_initializer=tf.truncated_normal_initializer(stddev=0.09),
+        data_format=df, name=scope+'/conv1d')
     if keep_r < 1.0:
         outs = tf.contrib.layers.dropout(
             outs, keep_r, is_training=train, scope=scope)
@@ -119,13 +119,12 @@ def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
 
 
 def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
-           weight_decay=2e-4, data_format='NHWC'):
-    l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
+           data_format='NHWC'):
     outs = tf.contrib.layers.conv2d(
         outs, num_outs, kernel, scope=scope, stride=stride,
         data_format=data_format, activation_fn=None,
         weights_initializer=tf.truncated_normal_initializer(stddev=0.09),
-        weights_regularizer=l2_func, biases_initializer=None)
+        biases_initializer=None)
     if keep_r < 1.0:
         outs = tf.contrib.layers.dropout(
             outs, keep_r, is_training=train, scope=scope)
@@ -133,13 +132,11 @@ def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
 
 
 def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True,
-              weight_decay=2e-4, act_fn=tf.nn.relu, data_format='NHWC'):
-    l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
+              act_fn=tf.nn.relu6, data_format='NHWC'):
     shape = list(kernel)+[outs.shape[data_format.index('C')].value, 1]
     weights = tf.get_variable(
-        scope+'/conv/weights', shape,
-        initializer=tf.truncated_normal_initializer(stddev=0.09),
-        regularizer=l2_func)
+        scope+'/conv/weight_depths', shape,
+        initializer=tf.truncated_normal_initializer(stddev=0.09))
     if data_format == 'NCHW':
         strides = [1, 1, stride, stride]
     else:
@@ -150,14 +147,13 @@ def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True,
     if keep_r < 1.0:
         outs = tf.contrib.layers.dropout(
             outs, keep_r, is_training=train, scope=scope)
-    return batch_norm(outs, scope, train, act_fn, data_format=data_format)
+    return batch_norm(outs, scope, train, data_format=data_format)
 
 
-def dense(outs, dim, scope, weight_decay=2e-4, data_format='NHWC'):
-    l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
+def dense(outs, dim, scope, data_format='NHWC'):
     outs = tf.contrib.layers.fully_connected(
         outs, dim, activation_fn=None, scope=scope+'/dense',
-        weights_regularizer=l2_func)
+        weights_initializer=tf.truncated_normal_initializer(stddev=0.09))
     return outs
 
 

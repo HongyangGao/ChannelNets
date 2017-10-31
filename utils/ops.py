@@ -131,7 +131,7 @@ def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True, weig
 def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True, weight_decay=2e-4,
         act_fn=tf.nn.relu, data_format='NHWC'):
     l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
-    shape = list(kernel)+[outs.shape[3].value, 1]
+    shape = list(kernel)+[outs.shape[data_format.index('C')].value, 1]
     weights = tf.get_variable(
         scope+'/conv/weights', shape,
         initializer=tf.truncated_normal_initializer(stddev=0.09),

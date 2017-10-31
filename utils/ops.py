@@ -14,15 +14,16 @@ def rev_conv2d(outs, kernel, scope, keep_r=1.0, train=True):
     return outs
 
 
-def single_block(outs, block_num, keep_r, is_train, scope, *args):
+def single_block(outs, block_num, keep_r, is_train, scope, data_format, *args):
     num_outs = outs.shape[3].value
     for i in range(block_num):
         outs = dw_block(
-            outs, num_outs, 1, scope+'/conv_%s' % i, keep_r, is_train)
+            outs, num_outs, 1, scope+'/conv_%s' % i, keep_r, is_train,
+            data_format=data_format)
     return outs
 
 
-def simple_group_block(outs, block_num, keep_r, is_train, scope, group, *args):
+def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format, group, *args):
     results = []
     split_outs = tf.split(outs, group, 3, name=scope+'/split')
     for g in range(group):
@@ -33,7 +34,7 @@ def simple_group_block(outs, block_num, keep_r, is_train, scope, group, *args):
     return tf.add(outs, results, name=scope+'/add')
 
 
-def conv_group_block(outs, block_num, keep_r, is_train, scope, group, *args):
+def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format, group, *args):
     num_outs = int(outs.shape[3].value/group)
     results = []
     for g in range(group):
@@ -47,20 +48,24 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, group, *args):
     return tf.add(outs, results, name=scope+'/add')
 
 
-def dw_block(outs, num_outs, stride, scope, keep_r, is_train, use_rev_conv=False):
-    outs = dw_conv2d(outs, (3, 3), stride, scope+'/conv1', keep_r, is_train)
+def dw_block(outs, num_outs, stride, scope, keep_r, is_train, use_rev_conv=False,
+        data_format='NCHW'):
+    outs = dw_conv2d(
+        outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
+        data_format=data_format)
     if use_rev_conv:
-        outs = rev_conv2d(outs, 3, scope+'/conv2', keep_r, is_train)
+        outs = rev_conv2d(
+            outs, 3, scope+'/conv2', keep_r, is_train, data_format=data_format)
     else:
-        outs = conv2d(outs, num_outs, (1, 1), scope+'/conv2', 1, keep_r, is_train)
+        outs = conv2d(
+            outs, num_outs, (1, 1), scope+'/conv2', 1, keep_r, is_train,
+            data_format=data_format)
     return outs
 
 
 def out_block(outs, scope, class_num, is_train, data_format='NCHW'):
-    kernel = outs.shape.as_list()[1:-1]
-    outs = pool2d(
-        outs, kernel, scope+'/pool', is_train, 'VALID',
-        data_format=data_format)
+    axes = [2, 3] if data_format='NCHW' else [1, 2]
+    outs = tf.reduce_mean(outs, axes, name=scope+'/pool')
     outs = dense(outs, class_num, scope, data_format=data_format)
     return outs
 
@@ -124,15 +129,20 @@ def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True, weig
 
 
 def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True, weight_decay=2e-4,
-        act_fn=tf.nn.relu):
+        act_fn=tf.nn.relu, data_format='NCHW'):
     l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
     shape = list(kernel)+[outs.shape[3].value, 1]
     weights = tf.get_variable(
         scope+'/conv/weights', shape,
         initializer=tf.truncated_normal_initializer(stddev=0.09),
         regularizer=l2_func)
+    if data_format == 'NCHW':
+        strides = [1, 1, stride, stride]
+    else:
+        strides = [1, stride, stride, 1]
     outs = tf.nn.depthwise_conv2d(
-        outs, weights, [1, stride, stride, 1], 'SAME', name=scope+'/depthwise_conv2d')
+        outs, weights, strides, 'SAME', name=scope+'/depthwise_conv2d',
+        data_format=data_format)
     if keep_r < 1.0:
         outs = tf.contrib.layers.dropout(
             outs, keep_r, is_training=train, scope=scope)
@@ -148,8 +158,8 @@ def pool2d(outs, kernel, scope, train, padding='SAME', data_format='NCHW'):
 
 def dense(outs, dim, scope, weight_decay=2e-4, data_format='NCHW'):
     l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
-    axis = [data_format.index('H'), data_format.index('H')]
-    outs = tf.squeeze(outs, axis=axis, name=scope+'/squeeze')
+    #axis = [data_format.index('H'), data_format.index('H')]
+    #outs = tf.squeeze(outs, axis=axis, name=scope+'/squeeze')
     outs = tf.contrib.layers.fully_connected(
         outs, dim, activation_fn=None, scope=scope+'/dense',
         weights_regularizer=l2_func)

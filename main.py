@@ -22,9 +22,6 @@ def configure():
     flags.DEFINE_bool('fake', False, 'use fake data for test or benchmark')
     # data
     flags.DEFINE_string('data_dir', '/tempspace2/hgao/data/imagenet/', 'Name of data directory')
-    flags.DEFINE_string('train_data', 'train.h5', 'Training data')
-    flags.DEFINE_string('valid_data', 'valid.h5', 'Validation data')
-    flags.DEFINE_string('test_data', 'valid.h5', 'Testing data')
     flags.DEFINE_integer('batch', 64, 'batch size')
     flags.DEFINE_integer('channel', 3, 'channel size')
     flags.DEFINE_integer('height', 224, 'height size')
@@ -32,8 +29,6 @@ def configure():
     flags.DEFINE_integer('class_num', 1000, 'output class number')
     # Debug
     flags.DEFINE_string('logdir', './logdir1', 'Log dir')
-    flags.DEFINE_string('modeldir', './modeldir', 'Model dir')
-    flags.DEFINE_string('model_name', 'model', 'Model file name')
     flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
     flags.DEFINE_integer('test_step', 0, 'Test or predict model at this step')
     # network architecture

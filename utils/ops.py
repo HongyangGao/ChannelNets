@@ -64,7 +64,7 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train, use_rev_conv=False
 
 
 def out_block(outs, scope, class_num, is_train, data_format='NHWC'):
-    axes = [2, 3] if data_format='NCHW' else [1, 2]
+    axes = [2, 3] if data_format=='NCHW' else [1, 2]
     outs = tf.reduce_mean(outs, axes, name=scope+'/pool')
     outs = dense(outs, class_num, scope, data_format=data_format)
     return outs

@@ -49,7 +49,7 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format, grou
 
 
 def dw_block(outs, num_outs, stride, scope, keep_r, is_train, use_rev_conv=False,
-        data_format='NCHW'):
+        data_format='NHWC'):
     outs = dw_conv2d(
         outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
         data_format=data_format)
@@ -63,7 +63,7 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train, use_rev_conv=False
     return outs
 
 
-def out_block(outs, scope, class_num, is_train, data_format='NCHW'):
+def out_block(outs, scope, class_num, is_train, data_format='NHWC'):
     axes = [2, 3] if data_format='NCHW' else [1, 2]
     outs = tf.reduce_mean(outs, axes, name=scope+'/pool')
     outs = dense(outs, class_num, scope, data_format=data_format)
@@ -103,7 +103,7 @@ def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True, padding='
 
 
 def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True, weight_decay=2e-4,
-        data_format='NCHW'):
+        data_format='NHWC'):
     df = 'channels_last' if data_format == 'NCHW' else 'channels_first'
     outs = tf.layers.conv1d(
         outs, num_outs, kernel, stride, padding='same', use_bias=False,
@@ -116,7 +116,7 @@ def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True, weig
 
 
 def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True, weight_decay=2e-4,
-        data_format='NCHW'):
+        data_format='NHWC'):
     l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
     outs = tf.contrib.layers.conv2d(
         outs, num_outs, kernel, scope=scope, stride=stride, data_format=data_format,
@@ -129,7 +129,7 @@ def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True, weig
 
 
 def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True, weight_decay=2e-4,
-        act_fn=tf.nn.relu, data_format='NCHW'):
+        act_fn=tf.nn.relu, data_format='NHWC'):
     l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
     shape = list(kernel)+[outs.shape[3].value, 1]
     weights = tf.get_variable(
@@ -149,14 +149,14 @@ def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True, weight_decay=
     return batch_norm(outs, scope, train, act_fn, data_format=data_format)
 
 
-def pool2d(outs, kernel, scope, train, padding='SAME', data_format='NCHW'):
+def pool2d(outs, kernel, scope, train, padding='SAME', data_format='NHWC'):
     outs = tf.contrib.layers.avg_pool2d(
         outs, kernel, scope=scope, padding=padding,
         data_format=data_format)
     return batch_norm(outs, scope, train, data_format=data_format)
 
 
-def dense(outs, dim, scope, weight_decay=2e-4, data_format='NCHW'):
+def dense(outs, dim, scope, weight_decay=2e-4, data_format='NHWC'):
     l2_func = tf.contrib.layers.l2_regularizer(weight_decay, scope)
     #axis = [data_format.index('H'), data_format.index('H')]
     #outs = tf.squeeze(outs, axis=axis, name=scope+'/squeeze')
@@ -172,7 +172,7 @@ def layer_norm(outs, scope):
     return lrelu(outs, scope+'/lrelu')
 
 
-def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6, data_format='NCHW'):
+def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6, data_format='NHWC'):
     return tf.contrib.layers.batch_norm(
         outs, decay=0.9997, scale=True, activation_fn=act_fn,
         epsilon=1e-3, is_training=is_training, data_format=data_format,

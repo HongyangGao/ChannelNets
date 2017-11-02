@@ -166,7 +166,7 @@ def layer_norm(outs, scope):
 def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6,
                data_format='NHWC'):
     return tf.contrib.layers.batch_norm(
-        outs, decay=0.9997, scale=True, activation_fn=act_fn,
+        outs, decay=0.9997, scale=True, activation_fn=act_fn, fused=True,
         epsilon=1e-3, is_training=is_training, data_format=data_format,
         scope=scope+'/batch_norm')
 

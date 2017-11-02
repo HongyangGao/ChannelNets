@@ -92,7 +92,7 @@ def conv_out_block(outs, scope, class_num, is_train):
 
 def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
                 padding='SAME', act_fn=tf.nn.relu6, data_format='NHWC'):
-    stride = int(outs.shape[3].value/num_outs)
+    stride = int(outs.shape[data_format.index('C')].value/num_outs)
     strides = (1, 1, 1, stride, 1) if data_format == 'NHWC' else (1, stride, 1, 1, 1)
     outs = tf.expand_dims(outs, axis=-1, name=scope+'/expand_dims')
     shape = list(kernel) + [1, 1]

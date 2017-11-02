@@ -15,7 +15,7 @@ def rev_conv2d(outs, kernel, scope, keep_r=1.0, train=True):
 
 
 def single_block(outs, block_num, keep_r, is_train, scope, data_format, *args):
-    num_outs = outs.shape[3].value
+    num_outs = outs.shape[data_format.index('C')].value
     for i in range(block_num):
         outs = dw_block(
             outs, num_outs, 1, scope+'/conv_%s' % i, keep_r, is_train,

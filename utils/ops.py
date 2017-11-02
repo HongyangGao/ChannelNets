@@ -68,7 +68,8 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
 
 def out_block(outs, scope, class_num, is_train, data_format='NHWC'):
     axes = [2, 3] if data_format == 'NCHW' else [1, 2]
-    outs = tf.reduce_mean(outs, axes, name=scope+'/pool')
+    # outs = tf.reduce_mean(outs, axes, name=scope+'/pool')
+    outs = global_pool(outs, scope, data_format)
     outs = dense(outs, class_num, scope, data_format=data_format)
     return outs
 
@@ -176,6 +177,16 @@ def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6,
         outs, decay=0.9997, scale=True, activation_fn=act_fn, fused=True,
         epsilon=1e-3, is_training=is_training, data_format=data_format,
         scope=scope+'/batch_norm')
+
+
+def global_pool(outs, scope, data_format):
+    if data_format == 'NHWC':
+        kernel = outs.shape.as_list()[1:3]
+    else:
+        kernel = outs.shape.as_list()[2:]
+    outs = tf.contrib.layers.avg_pool2d(
+        outs, kernel, scope=scope, data_format=data_format)
+    return outs
 
 
 def lrelu(x, name='lrelu'):

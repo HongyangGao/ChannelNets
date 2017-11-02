@@ -37,16 +37,17 @@ def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format,
 
 def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
                      group, *args):
-    num_outs = int(outs.shape[3].value/group)
+    num_outs = int(outs.shape[data_format.index('C')].value/group)
+    shape = [1, 1, group] if data_format == 'NHWC' else [group, 1, 1]
     results = []
     for g in range(group):
         cur_outs = pure_conv2d(
-            outs, num_outs, (1, 1, group), scope+'/group_%s_conv0' % g, keep_r,
-            is_train)
+            outs, num_outs, shape, scope+'/group_%s_conv0' % g, keep_r,
+            is_train, data_format=data_format)
         cur_outs = single_block(
             cur_outs, block_num, keep_r, is_train, scope+'/group_%s' % g, data_format)
         results.append(cur_outs)
-    results = tf.concat(results, 3, name=scope+'/concat')
+    results = tf.concat(results, data_format.index('C'), name=scope+'/concat')
     return tf.add(outs, results, name=scope+'/add')
 
 
@@ -73,6 +74,7 @@ def out_block(outs, scope, class_num, is_train, data_format='NHWC'):
 
 
 def conv_out_block(outs, scope, class_num, is_train):
+    # need to change the format
     kernel = (3, 3, 9)
     for i in range(3):
         outs = dw_conv2d(

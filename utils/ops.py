@@ -96,12 +96,14 @@ def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
     if data_format == 'NHWC':
         strides = (1, 1, stride)
         outs = tf.expand_dims(outs, axis=-1, name=scope+'/expand_dims')
+        df = 'channels_last'
     else:
         strides = (stride, 1, 1)
         outs = tf.expand_dims(outs, axis=1, name=scope+'/expand_dims')
+        df = 'channels_first'
     outs = tf.layers.conv3d(
         outs, 1, kernel, strides, padding=padding, activation=act_fn,
-        use_bias=False,
+        use_bias=False, data_format=df,
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.09))
     if data_format == 'NHWC':
         outs = tf.squeeze(outs, axis=[-1], name=scope+'/squeeze')

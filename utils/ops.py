@@ -29,7 +29,7 @@ def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format,
     split_outs = tf.split(outs, group, 3, name=scope+'/split')
     for g in range(group):
         cur_outs = single_block(
-            split_outs[g], block_num, keep_r, is_train, scope+'/group_%s' % g)
+            split_outs[g], block_num, keep_r, is_train, scope+'/group_%s' % g, data_format)
         results.append(cur_outs)
     results = tf.concat(results, 3, name=scope+'/concat')
     return tf.add(outs, results, name=scope+'/add')
@@ -44,7 +44,7 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
             outs, num_outs, (1, 1, group), scope+'/group_%s_conv0' % g, keep_r,
             is_train)
         cur_outs = single_block(
-            cur_outs, block_num, keep_r, is_train, scope+'/group_%s' % g)
+            cur_outs, block_num, keep_r, is_train, scope+'/group_%s' % g, data_format)
         results.append(cur_outs)
     results = tf.concat(results, 3, name=scope+'/concat')
     return tf.add(outs, results, name=scope+'/add')

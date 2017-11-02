@@ -42,7 +42,8 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
     results = []
     for g in range(group):
         cur_outs = pure_conv2d(
-            outs, num_outs, shape, scope+'/group_%s_conv0' % g, keep_r, is_train)
+            outs, num_outs, shape, scope+'/group_%s_conv0' % g, keep_r, is_train,
+            data_format=data_format)
         cur_outs = single_block(
             cur_outs, block_num, keep_r, is_train, scope+'/group_%s' % g, data_format)
         results.append(cur_outs)
@@ -90,15 +91,16 @@ def conv_out_block(outs, scope, class_num, is_train):
 
 
 def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
-                padding='SAME', act_fn=tf.nn.relu6):
+                padding='SAME', act_fn=tf.nn.relu6, data_format='NHWC'):
     stride = int(outs.shape[3].value/num_outs)
+    strides = (1, 1, 1, stride, 1) if data_format == 'NHWC' else (1, stride, 1, 1, 1)
     outs = tf.expand_dims(outs, axis=-1, name=scope+'/expand_dims')
     shape = list(kernel) + [1, 1]
     weights = tf.get_variable(
         scope+'/conv/weights', shape,
         initializer=tf.truncated_normal_initializer(stddev=0.09))
     outs = tf.nn.conv3d(
-        outs, weights, (1, 1, 1, stride, 1), padding=padding,
+        outs, weights, strides, padding=padding,
         name=scope+'/conv')
     outs = tf.squeeze(outs, axis=[-1], name=scope+'/squeeze')
     if act_fn:

@@ -70,6 +70,7 @@ def out_block(outs, scope, class_num, is_train, data_format='NHWC'):
     axes = [2, 3] if data_format == 'NCHW' else [1, 2]
     # outs = tf.reduce_mean(outs, axes, name=scope+'/pool')
     outs = global_pool(outs, scope, data_format)
+    outs = tf.squeeze(outs, axis=axes, name=scope+'/squeeze')
     outs = dense(outs, class_num, scope, data_format=data_format)
     return outs
 

@@ -151,10 +151,11 @@ def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True,
     outs = tf.nn.depthwise_conv2d(
         outs, weights, strides, 'SAME', name=scope+'/depthwise_conv2d',
         data_format=data_format)
-    if keep_r < 1.0:
-        outs = tf.contrib.layers.dropout(
-            outs, keep_r, is_training=train, scope=scope)
-    return batch_norm(outs, scope, train, data_format=data_format)
+    # if keep_r < 1.0:
+    #     outs = tf.contrib.layers.dropout(
+    #         outs, keep_r, is_training=train, scope=scope)
+   #return batch_norm(outs, scope, train, data_format=data_format)
+   return outs
 
 
 def dense(outs, dim, scope, data_format='NHWC'):

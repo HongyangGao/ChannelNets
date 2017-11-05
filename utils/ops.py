@@ -154,8 +154,8 @@ def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True,
     # if keep_r < 1.0:
     #     outs = tf.contrib.layers.dropout(
     #         outs, keep_r, is_training=train, scope=scope)
-   #return batch_norm(outs, scope, train, data_format=data_format)
-   return outs
+    # return batch_norm(outs, scope, train, data_format=data_format)
+    return outs
 
 
 def dense(outs, dim, scope, data_format='NHWC'):

@@ -88,7 +88,7 @@ def get_imagenet_dataflow(datadir, name, batch_size, augmentors):
     if isTrain:
         ds = dataset.ILSVRC12(datadir, name, shuffle=True)
         ds = AugmentImageComponent(ds, augmentors, copy=False)
-        ds = PrefetchDataZMQ(ds, cpu, 50)
+        ds = PrefetchDataZMQ(ds, cpu, 20)
         ds = BatchData(ds, batch_size, remainder=False)
     else:
         ds = dataset.ILSVRC12Files(datadir, name, shuffle=False)

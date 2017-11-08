@@ -38,7 +38,7 @@ def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format,
 def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
                      group, *args):
     num_outs = int(outs.shape[data_format.index('C')].value/group)
-    shape = [1, 1, group] if data_format == 'NHWC' else [group, 1, 1]
+    shape = [1, 1, 4*group] if data_format == 'NHWC' else [4*group, 1, 1]
     results = []
     for g in range(group):
         cur_outs = pure_conv2d(

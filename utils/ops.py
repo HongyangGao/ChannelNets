@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 
-def rev_conv2d(outs, kernel, scope, keep_r=1.0, train=True):
+def rev_conv2d(outs, kernel, scope, data_format, keep_r=1.0, train=True):
     outs = tf.transpose(outs, perm=[0, 3, 1, 2], name=scope+'/trans1')
     pre_shape = [-1] + outs.shape.as_list()[1:]
     new_shape = [-1, tf.shape(outs)[1]] + [np.prod(outs.shape.as_list()[2:])]
@@ -38,7 +38,7 @@ def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format,
 def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
                      group, *args):
     num_outs = int(outs.shape[data_format.index('C')].value/group)
-    shape = [1, 1, group] if data_format == 'NHWC' else [group, 1, 1]
+    shape = [1, 1, 4*group] if data_format == 'NHWC' else [4*group, 1, 1]
     results = []
     for g in range(group):
         cur_outs = pure_conv2d(
@@ -151,10 +151,6 @@ def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True,
     outs = tf.nn.depthwise_conv2d(
         outs, weights, strides, 'SAME', name=scope+'/depthwise_conv2d',
         data_format=data_format)
-    # if keep_r < 1.0:
-    #     outs = tf.contrib.layers.dropout(
-    #         outs, keep_r, is_training=train, scope=scope)
-    # return batch_norm(outs, scope, train, data_format=data_format)
     return outs
 
 
@@ -163,12 +159,6 @@ def dense(outs, dim, scope, data_format='NHWC'):
         outs, dim, activation_fn=None, scope=scope+'/dense',
         weights_initializer=tf.truncated_normal_initializer(stddev=0.09))
     return outs
-
-
-def layer_norm(outs, scope):
-    outs = tf.contrib.layers.layer_norm(
-        outs, scope=scope+'/layer_norm')
-    return lrelu(outs, scope+'/lrelu')
 
 
 def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6,
@@ -187,8 +177,3 @@ def global_pool(outs, scope, data_format):
     outs = tf.contrib.layers.avg_pool2d(
         outs, kernel, scope=scope, data_format=data_format)
     return outs
-
-
-def lrelu(x, name='lrelu'):
-    with tf.variable_scope(name):
-        return tf.maximum(x, 0.2*x)

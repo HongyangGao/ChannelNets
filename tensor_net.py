@@ -1,8 +1,4 @@
-import sys
-import argparse
-import numpy as np
 import os
-
 import tensorflow as tf
 
 from tensorpack import logger, QueueInput
@@ -49,7 +45,7 @@ def get_config(model, conf):
         callbacks = [
             ModelSaver(),
             ScheduledHyperParamSetter('learning_rate',
-                                      [(30, 1e-2), (60, 1e-3), (85, 1e-4), (95, 1e-5), (105, 1e-6)]),
+                                      [(40, 1e-2), (65, 1e-3), (85, 1e-4), (95, 1e-5), (105, 1e-6)]),
             HumanHyperParamSetter('learning_rate'),
         ]
         infs = [ClassificationError('wrong-top1', 'val-error-top1'),

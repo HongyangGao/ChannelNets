@@ -55,7 +55,7 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
              use_rev_conv=False, data_format='NHWC'):
     outs = dw_conv2d(
         outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
-        data_format=data_format)
+        data_format=data_format, act_fn=tf.nn.leaky_relu)
     if use_rev_conv:
         outs = rev_conv2d(
             outs, 3, scope+'/conv2', keep_r, is_train, data_format=data_format)
@@ -77,12 +77,8 @@ def conv_out_block(outs, scope, class_num, is_train):
     # need to change the format
     kernel = (3, 3, 9)
     for i in range(3):
-        outs = dw_conv2d(
-            outs, (3, 3), 1, scope+'/dw_conv_%s' % i, act_fn=lrelu)
-        if i == 2:
-            act_fn = None
-        else:
-            act_fn = lrelu
+        outs = dw_conv2d(outs, (3, 3), 1, scope+'/dw_conv_%s' % i)
+        act_fn = None if i == 2 else tf.nn.leaky_relu
         outs = pure_conv2d(
             outs, outs.shape[3].value, kernel, scope+'/pure_%s' % i,
             padding='VALID', act_fn=act_fn)
@@ -91,7 +87,7 @@ def conv_out_block(outs, scope, class_num, is_train):
 
 
 def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
-                padding='SAME', act_fn=tf.nn.relu6, data_format='NHWC'):
+                padding='SAME', act_fn=tf.nn.leaky_relu, data_format='NHWC'):
     stride = int(outs.shape[data_format.index('C')].value/num_outs)
     if data_format == 'NHWC':
         strides = (1, 1, stride)
@@ -139,7 +135,7 @@ def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
 
 
 def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True,
-              act_fn=tf.nn.relu6, data_format='NHWC'):
+              act_fn=tf.nn.leaky_relu, data_format='NHWC'):
     shape = list(kernel)+[outs.shape[data_format.index('C')].value, 1]
     weights = tf.get_variable(
         scope+'/conv/weight_depths', shape,
@@ -151,6 +147,7 @@ def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True,
     outs = tf.nn.depthwise_conv2d(
         outs, weights, strides, 'SAME', name=scope+'/depthwise_conv2d',
         data_format=data_format)
+    outs = act_fn(outs)
     return outs
 
 
@@ -161,7 +158,7 @@ def dense(outs, dim, scope, data_format='NHWC'):
     return outs
 
 
-def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6,
+def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.leaky_relu,
                data_format='NHWC'):
     return tf.contrib.layers.batch_norm(
         outs, decay=0.9997, scale=True, activation_fn=act_fn, fused=True,

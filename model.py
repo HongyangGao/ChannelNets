@@ -9,9 +9,8 @@ class MobileNet(object):
     def inference(self, images):
         cur_out_num = self.conf.ch_num
         outs = ops.conv2d(
-            images, cur_out_num, (3, 3), 'conv_s', stride=2,
-            keep_r=self.conf.keep_r, train=self.conf.is_train,
-            data_format=self.conf.data_format)
+            images, cur_out_num, (3, 3), 'conv_s', train=self.conf.is_train,
+            stride=2, data_format=self.conf.data_format)
         cur_out_num *= 2
         outs = ops.dw_block(  # 112 * 112 * 64
             outs, cur_out_num, 1, 'conv_1_0', self.conf.keep_r,

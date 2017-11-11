@@ -43,7 +43,7 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
     num_outs = outs.shape[data_format.index('C')].value
     shape = [1, 1, 4*group] if data_format == 'NHWC' else [4*group, 1, 1]
     pure_outs = pure_conv2d(
-        outs, num_outs, shape, scope+'/group_%s_conv0' % g, keep_r,
+        outs, num_outs, shape, scope+'/group_conv0', keep_r,
         is_train, act_fn=None, data_format=data_format)
     new_shape = pure_outs.shape.as_list()
     new_shape[data_format.index('C')] = int(results[data_format.index('C')]/group)

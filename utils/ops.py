@@ -8,7 +8,7 @@ def rev_conv2d(outs, kernel, scope, keep_r=1.0, train=True, data_format='NHWC'):
     pre_shape = [-1] + outs.shape.as_list()[1:]
     new_shape = [-1, outs.shape.as_list()[1]] + [np.prod(outs.shape.as_list()[2:])]
     outs = tf.reshape(outs, new_shape, name=scope+'/reshape1')
-    num_outs = outs.shape.as_list()[1]
+    num_outs = outs.shape.as_list()[-1]
     outs = conv1d(outs, num_outs, kernel, scope+'/conv1d', 1, keep_r, train)
     outs = tf.reshape(outs, pre_shape, name=scope+'/reshape2')
     if data_format == 'NHWC':
@@ -115,7 +115,7 @@ def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
 
 def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
            data_format='NHWC'):
-    df = 'channels_last' if data_format == 'NCHW' else 'channels_first'
+    df = 'channels_last' if data_format == 'NHWC' else 'channels_first'
     outs = tf.layers.conv1d(
         outs, num_outs, kernel, stride, padding='same', use_bias=False,
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.09),

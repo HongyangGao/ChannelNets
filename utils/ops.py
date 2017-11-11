@@ -17,9 +17,10 @@ def rev_conv2d(outs, kernel, scope, data_format, keep_r=1.0, train=True):
 def single_block(outs, block_num, keep_r, is_train, scope, data_format, *args):
     num_outs = outs.shape[data_format.index('C')].value
     for i in range(block_num):
-        outs = dw_block(
+        cur_outs = dw_block(
             outs, num_outs, 1, scope+'/conv_%s' % i, keep_r, is_train,
             data_format=data_format)
+        outs = tf.add(outs, cur_outs, name=scope+'/add_%s' % i)
     return outs
 
 
@@ -29,7 +30,8 @@ def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format,
     split_outs = tf.split(outs, group, 3, name=scope+'/split')
     for g in range(group):
         cur_outs = single_block(
-            split_outs[g], block_num, keep_r, is_train, scope+'/group_%s' % g, data_format)
+            split_outs[g], block_num, keep_r, is_train, scope+'/group_%s' % g,
+            data_format)
         results.append(cur_outs)
     results = tf.concat(results, 3, name=scope+'/concat')
     return tf.add(outs, results, name=scope+'/add')
@@ -42,10 +44,11 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
     results = []
     for g in range(group):
         cur_outs = pure_conv2d(
-            outs, num_outs, shape, scope+'/group_%s_conv0' % g, keep_r, is_train,
-            act_fn=None, data_format=data_format)
+            outs, num_outs, shape, scope+'/group_%s_conv0' % g, keep_r,
+            is_train, act_fn=None, data_format=data_format)
         cur_outs = single_block(
-            cur_outs, block_num, keep_r, is_train, scope+'/group_%s' % g, data_format)
+            cur_outs, block_num, keep_r, is_train, scope+'/group_%s' % g,
+            data_format)
         results.append(cur_outs)
     results = tf.concat(results, data_format.index('C'), name=scope+'/concat')
     return tf.add(outs, results, name=scope+'/add')
@@ -55,7 +58,7 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
              use_rev_conv=False, data_format='NHWC'):
     outs = dw_conv2d(
         outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
-        data_format=data_format)
+        data_format=data_format, act_fn=tf.nn.leaky_relu)
     if use_rev_conv:
         outs = rev_conv2d(
             outs, 3, scope+'/conv2', keep_r, is_train, data_format=data_format)
@@ -77,12 +80,8 @@ def conv_out_block(outs, scope, class_num, is_train):
     # need to change the format
     kernel = (3, 3, 9)
     for i in range(3):
-        outs = dw_conv2d(
-            outs, (3, 3), 1, scope+'/dw_conv_%s' % i, act_fn=lrelu)
-        if i == 2:
-            act_fn = None
-        else:
-            act_fn = lrelu
+        outs = dw_conv2d(outs, (3, 3), 1, scope+'/dw_conv_%s' % i)
+        act_fn = None if i == 2 else tf.nn.leaky_relu
         outs = pure_conv2d(
             outs, outs.shape[3].value, kernel, scope+'/pure_%s' % i,
             padding='VALID', act_fn=act_fn)
@@ -91,7 +90,7 @@ def conv_out_block(outs, scope, class_num, is_train):
 
 
 def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
-                padding='SAME', act_fn=tf.nn.relu6, data_format='NHWC'):
+                padding='SAME', act_fn=tf.nn.leaky_relu, data_format='NHWC'):
     stride = int(outs.shape[data_format.index('C')].value/num_outs)
     if data_format == 'NHWC':
         strides = (1, 1, stride)
@@ -139,7 +138,7 @@ def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
 
 
 def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True,
-              act_fn=tf.nn.relu6, data_format='NHWC'):
+              act_fn=tf.nn.leaky_relu, data_format='NHWC'):
     shape = list(kernel)+[outs.shape[data_format.index('C')].value, 1]
     weights = tf.get_variable(
         scope+'/conv/weight_depths', shape,
@@ -151,6 +150,7 @@ def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True,
     outs = tf.nn.depthwise_conv2d(
         outs, weights, strides, 'SAME', name=scope+'/depthwise_conv2d',
         data_format=data_format)
+    outs = act_fn(outs)
     return outs
 
 
@@ -161,7 +161,7 @@ def dense(outs, dim, scope, data_format='NHWC'):
     return outs
 
 
-def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6,
+def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.leaky_relu,
                data_format='NHWC'):
     return tf.contrib.layers.batch_norm(
         outs, decay=0.9997, scale=True, activation_fn=act_fn, fused=True,

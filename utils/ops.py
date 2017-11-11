@@ -48,6 +48,7 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
     new_shape = pure_outs.shape.as_list()
     new_shape[data_format.index('C')] = int(new_shape[data_format.index('C')]/group)
     new_shape.insert(data_format.index('C'), group)
+    new_shape[0] = -1
     pure_outs = tf.reshape(pure_outs, new_shape, name=scope+'/reshape')
     pure_outs = tf.unstack(pure_outs, axis=data_format.index('C'), name=scope+'/unstack')
     results = []

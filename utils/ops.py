@@ -44,7 +44,7 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
     results = []
     for g in range(group):
         cur_outs = pure_conv2d(
-            outs, num_outs, shape, scope+'/group_conv0', keep_r,
+            outs, num_outs, shape, scope+'/group_%s_conv0' % g, keep_r,
             is_train, act_fn=None, data_format=data_format)
         cur_outs = single_block(
             cur_outs, block_num, keep_r, is_train, scope+'/group_%s' % g,

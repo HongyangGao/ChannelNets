@@ -13,7 +13,7 @@ def rev_conv2d(outs, kernel, scope, keep_r=1.0, train=True, data_format='NHWC'):
     outs = tf.reshape(outs, pre_shape, name=scope+'/reshape2')
     if data_format == 'NHWC':
         outs = tf.transpose(outs, perm=[0, 2, 3, 1], name=scope+'/trans2')
-    return outs
+    return batch_norm(outs, scope, train, data_format=data_format)
 
 
 def single_block(outs, block_num, keep_r, is_train, scope, data_format, *args):
@@ -123,7 +123,7 @@ def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
     if keep_r < 1.0:
         outs = tf.contrib.layers.dropout(
             outs, keep_r, is_training=train, scope=scope)
-    return batch_norm(outs, scope, train, data_format=data_format)
+    return outs
 
 
 def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,

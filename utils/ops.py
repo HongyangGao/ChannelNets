@@ -2,8 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 
-def rev_conv2d(outs, kernel, scope, data_format, keep_r=1.0, train=True,
-        data_format='NHWC'):
+def rev_conv2d(outs, kernel, scope, keep_r=1.0, train=True, data_format='NHWC'):
     if data_format == 'NHWC':
         outs = tf.transpose(outs, perm=[0, 3, 1, 2], name=scope+'/trans1')
     pre_shape = [-1] + outs.shape.as_list()[1:]

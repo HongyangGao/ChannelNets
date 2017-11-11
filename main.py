@@ -1,6 +1,4 @@
 import os
-import time
-import argparse
 import tensorflow as tf
 from model import MobileNet
 from tensor_net import run
@@ -12,7 +10,7 @@ def configure():
     flags.DEFINE_string('data_format', 'NCHW', 'data format for training')
     flags.DEFINE_bool('fake', False, 'use fake data for test or benchmark')
     # data
-    flags.DEFINE_string('data_dir', '/tempspace2/hgao/data/imagenet/', 'Name of data directory')
+    flags.DEFINE_string('data_dir', '/tempspace2/hgao/data/imagenet/', 'data')
     flags.DEFINE_integer('batch', 64, 'batch size')
     flags.DEFINE_integer('class_num', 1000, 'output class number')
     # Debug

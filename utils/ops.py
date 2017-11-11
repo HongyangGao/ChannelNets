@@ -30,7 +30,8 @@ def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format,
     split_outs = tf.split(outs, group, 3, name=scope+'/split')
     for g in range(group):
         cur_outs = single_block(
-            split_outs[g], block_num, keep_r, is_train, scope+'/group_%s' % g, data_format)
+            split_outs[g], block_num, keep_r, is_train, scope+'/group_%s' % g,
+            data_format)
         results.append(cur_outs)
     results = tf.concat(results, 3, name=scope+'/concat')
     return tf.add(outs, results, name=scope+'/add')
@@ -43,10 +44,11 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
     results = []
     for g in range(group):
         cur_outs = pure_conv2d(
-            outs, num_outs, shape, scope+'/group_%s_conv0' % g, keep_r, is_train,
-            act_fn=None, data_format=data_format)
+            outs, num_outs, shape, scope+'/group_%s_conv0' % g, keep_r,
+            is_train, act_fn=None, data_format=data_format)
         cur_outs = single_block(
-            cur_outs, block_num, keep_r, is_train, scope+'/group_%s' % g, data_format)
+            cur_outs, block_num, keep_r, is_train, scope+'/group_%s' % g,
+            data_format)
         results.append(cur_outs)
     results = tf.concat(results, data_format.index('C'), name=scope+'/concat')
     return tf.add(outs, results, name=scope+'/add')

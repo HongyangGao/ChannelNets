@@ -39,22 +39,15 @@ def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format,
 
 def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
                      group, *args):
-    # num_outs = int(outs.shape[data_format.index('C')].value/group)
-    num_outs = outs.shape[data_format.index('C')].value
+    num_outs = int(outs.shape[data_format.index('C')].value/group)
     shape = [1, 1, 4*group] if data_format == 'NHWC' else [4*group, 1, 1]
-    pure_outs = pure_conv2d(
-        outs, num_outs, shape, scope+'/group_conv0', keep_r,
-        is_train, act_fn=None, data_format=data_format)
-    new_shape = pure_outs.shape.as_list()
-    new_shape[data_format.index('C')] = int(new_shape[data_format.index('C')]/group)
-    new_shape.insert(data_format.index('C'), group)
-    new_shape[0] = -1
-    pure_outs = tf.reshape(pure_outs, new_shape, name=scope+'/reshape')
-    pure_outs = tf.unstack(pure_outs, axis=data_format.index('C'), name=scope+'/unstack')
     results = []
     for g in range(group):
+        cur_outs = pure_conv2d(
+            outs, num_outs, shape, scope+'/group_conv0', keep_r,
+            is_train, act_fn=None, data_format=data_format)
         cur_outs = single_block(
-            pure_outs[g], block_num, keep_r, is_train, scope+'/group_%s' % g,
+            cur_outs, block_num, keep_r, is_train, scope+'/group_%s' % g,
             data_format)
         results.append(cur_outs)
     results = tf.concat(results, data_format.index('C'), name=scope+'/concat')
@@ -98,8 +91,7 @@ def conv_out_block(outs, scope, class_num, is_train):
 
 def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
                 padding='SAME', act_fn=tf.nn.leaky_relu, data_format='NHWC'):
-    # stride = int(outs.shape[data_format.index('C')].value/num_outs)
-    stride = 1
+    stride = int(outs.shape[data_format.index('C')].value/num_outs)
     if data_format == 'NHWC':
         strides = (1, 1, stride)
         outs = tf.expand_dims(outs, axis=-1, name=scope+'/expand_dims')

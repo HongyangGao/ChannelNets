@@ -44,7 +44,7 @@ def get_config(model, conf):
             ModelSaver(),
             ScheduledHyperParamSetter(
                 'learning_rate',
-                [(45, 1e-2), (60, 1e-3), (70, 1e-4), (75, 1e-5), (80, 1e-6)]),
+                [(45, 1e-2), (60, 1e-3), (65, 1e-4), (70, 1e-5), (75, 1e-6)]),
             HumanHyperParamSetter('learning_rate'),
         ]
         infs = [ClassificationError('wrong-top1', 'val-error-top1'),
@@ -58,7 +58,7 @@ def get_config(model, conf):
                 dataset_val, infs, list(range(nr_tower))))
     return TrainConfig(
         model=model, dataflow=dataset_train, callbacks=callbacks,
-        steps_per_epoch=5000, max_epoch=110, nr_tower=nr_tower)
+        steps_per_epoch=5000, max_epoch=80, nr_tower=nr_tower)
 
 
 def run(model):

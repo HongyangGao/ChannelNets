@@ -115,7 +115,7 @@ def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
 
 def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
            data_format='NHWC'):
-    df = 'channels_last' if data_format == 'NCHW' else 'channels_first'
+    df = 'channels_last' if data_format == 'NHWC' else 'channels_first'
     outs = tf.layers.conv1d(
         outs, num_outs, kernel, stride, padding='same', use_bias=False,
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.09),

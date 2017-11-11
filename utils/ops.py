@@ -2,15 +2,18 @@ import tensorflow as tf
 import numpy as np
 
 
-def rev_conv2d(outs, kernel, scope, data_format, keep_r=1.0, train=True):
-    outs = tf.transpose(outs, perm=[0, 3, 1, 2], name=scope+'/trans1')
+def rev_conv2d(outs, kernel, scope, data_format, keep_r=1.0, train=True,
+        data_format='NHWC'):
+    if data_format == 'NHWC':
+        outs = tf.transpose(outs, perm=[0, 3, 1, 2], name=scope+'/trans1')
     pre_shape = [-1] + outs.shape.as_list()[1:]
     new_shape = [-1, tf.shape(outs)[1]] + [np.prod(outs.shape.as_list()[2:])]
     outs = tf.reshape(outs, new_shape, name=scope+'/reshape1')
     num_outs = outs.shape.as_list()[-1]
     outs = conv1d(outs, num_outs, kernel, scope+'/conv1d', 1, keep_r, train)
     outs = tf.reshape(outs, pre_shape, name=scope+'/reshape2')
-    outs = tf.transpose(outs, perm=[0, 2, 3, 1], name=scope+'/trans2')
+    if data_format == 'NHWC':
+        outs = tf.transpose(outs, perm=[0, 2, 3, 1], name=scope+'/trans2')
     return outs
 
 
@@ -61,7 +64,7 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
         data_format=data_format, act_fn=tf.nn.leaky_relu)
     if use_rev_conv:
         outs = rev_conv2d(
-            outs, 3, scope+'/conv2', keep_r, is_train, data_format=data_format)
+            outs, 64, scope+'/conv2', keep_r, is_train, data_format)
     else:
         outs = conv2d(
             outs, num_outs, (1, 1), scope+'/conv2', 1, keep_r, is_train,

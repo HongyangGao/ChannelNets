@@ -16,7 +16,7 @@ def configure():
     # Debug
     flags.DEFINE_string('logdir', './logdir', 'Log dir')
     flags.DEFINE_string('reload_step', '', 'Reload step: mode-xxxxx')
-    flags.DEFINE_integer('test_step', 0, 'Test or predict model at this step')
+    flags.DEFINE_string('test_step', '', 'Test step: mode-xxxxx')
     # network architecture
     flags.DEFINE_integer('ch_num', 32, 'channel number')
     flags.DEFINE_integer('block_num', 5, 'block number')

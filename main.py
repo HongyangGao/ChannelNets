@@ -15,7 +15,7 @@ def configure():
     flags.DEFINE_integer('class_num', 1000, 'output class number')
     # Debug
     flags.DEFINE_string('logdir', './logdir', 'Log dir')
-    flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
+    flags.DEFINE_string('reload_step', '', 'Reload step: mode-xxxxx')
     flags.DEFINE_integer('test_step', 0, 'Test or predict model at this step')
     # network architecture
     flags.DEFINE_integer('ch_num', 32, 'channel number')

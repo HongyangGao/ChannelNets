@@ -67,10 +67,12 @@ def run(model):
         batch = 64
         dataset = get_data(model.conf.data_dir, 'val', batch)
         eval_on_ILSVRC12(
-            instance, get_model_loader(model.conf.test_step), dataset)
+            instance, get_model_loader(model.conf.logdir+'/'+model.conf.test_step),
+            dataset)
     else:
         logger.set_logger_dir(os.path.join(model.conf.logdir))
         config = get_config(instance, model.conf)
         if model.conf.reload_step:
-            config.session_init = get_model_loader(model.conf.reload_step)
+            config.session_init = get_model_loader(
+                model.conf.logdir+'/'+model.conf.reload_step)
         SyncMultiGPUTrainerParameterServer(config).train()

@@ -2,11 +2,13 @@ import tensorflow as tf
 import numpy as np
 
 
-def rev_conv2d(outs, kernel, scope, keep_r=1.0, train=True, data_format='NHWC'):
+def rev_conv2d(outs, kernel, scope, keep_r=1.0, train=True,
+               data_format='NHWC'):
     if data_format == 'NHWC':
         outs = tf.transpose(outs, perm=[0, 3, 1, 2], name=scope+'/trans1')
     pre_shape = [-1] + outs.shape.as_list()[1:]
-    new_shape = [-1, outs.shape.as_list()[1]] + [np.prod(outs.shape.as_list()[2:])]
+    hw_dim = np.prod(outs.shape.as_list()[2:])
+    new_shape = [-1, outs.shape.as_list()[1]] + [hw_dim]
     outs = tf.reshape(outs, new_shape, name=scope+'/reshape1')
     num_outs = outs.shape.as_list()[-1]
     outs = conv1d(outs, num_outs, kernel, scope+'/conv1d', 1, keep_r, train)

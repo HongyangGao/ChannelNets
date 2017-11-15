@@ -67,7 +67,8 @@ def run(model):
         batch = 64
         dataset = get_data(model.conf.data_dir, 'val', batch)
         eval_on_ILSVRC12(
-            instance, get_model_loader(model.conf.logdir+'/'+model.conf.test_step),
+            instance,
+            get_model_loader(model.conf.logdir+'/'+model.conf.test_step),
             dataset)
     else:
         logger.set_logger_dir(os.path.join(model.conf.logdir))

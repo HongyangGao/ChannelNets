@@ -2,16 +2,18 @@ import tensorflow as tf
 import numpy as np
 
 
-def rev_conv2d(outs, kernel, scope, keep_r=1.0, train=True,
-               data_format='NHWC'):
+def rev_conv2d(outs, scope, keep_r=1.0, train=True, data_format='NHWC'):
     if data_format == 'NHWC':
         outs = tf.transpose(outs, perm=[0, 3, 1, 2], name=scope+'/trans1')
     pre_shape = [-1] + outs.shape.as_list()[1:]
     hw_dim = np.prod(outs.shape.as_list()[2:])
     new_shape = [-1, outs.shape.as_list()[1]] + [hw_dim]
     outs = tf.reshape(outs, new_shape, name=scope+'/reshape1')
-    num_outs = outs.shape.as_list()[-1]
-    outs = conv1d(outs, num_outs, kernel, scope+'/conv1d', 1, keep_r, train)
+    num_outs = outs.shape.as_list()[-1]/2
+    kernel = num_outs+1
+    outs = conv1d(
+        outs, num_outs, kernel, scope+'/conv1d', 1, keep_r, train,
+        padding='valid')
     outs = tf.reshape(outs, pre_shape, name=scope+'/reshape2')
     if data_format == 'NHWC':
         outs = tf.transpose(outs, perm=[0, 2, 3, 1], name=scope+'/trans2')
@@ -60,13 +62,16 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
 
 def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
              use_rev_conv=False, data_format='NHWC'):
-    outs = dw_conv2d(
-        outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
-        data_format=data_format, act_fn=tf.nn.relu6)
     if use_rev_conv:
+        outs = dw_conv2d(
+            outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
+            data_format=data_format, act_fn=tf.nn.crelu)
         outs = rev_conv2d(
-            outs, 64, scope+'/conv2', keep_r, is_train, data_format)
+            outs, scope+'/conv2', keep_r, is_train, data_format)
     else:
+        outs = dw_conv2d(
+            outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
+            data_format=data_format, act_fn=tf.nn.relu6)
         outs = conv2d(
             outs, num_outs, (1, 1), scope+'/conv2', 1, keep_r, is_train,
             data_format=data_format)
@@ -116,10 +121,10 @@ def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
 
 
 def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
-           data_format='NHWC'):
+           data_format='NHWC', padding='same'):
     df = 'channels_last' if data_format == 'NHWC' else 'channels_first'
     outs = tf.layers.conv1d(
-        outs, num_outs, kernel, stride, padding='same', use_bias=False,
+        outs, num_outs, kernel, stride, padding=padding, use_bias=False,
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.09),
         data_format=df, name=scope+'/conv1d')
     if keep_r < 1.0:

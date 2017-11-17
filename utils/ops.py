@@ -6,6 +6,7 @@ def rev_conv2d(outs, scope, keep_r=1.0, train=True, data_format='NHWC'):
     if data_format == 'NHWC':
         outs = tf.transpose(outs, perm=[0, 3, 1, 2], name=scope+'/trans1')
     pre_shape = [-1] + outs.shape.as_list()[1:]
+    pre_shape[1] = int(pre_shape[1]/2)
     hw_dim = np.prod(outs.shape.as_list()[2:])
     new_shape = [-1, outs.shape.as_list()[1]] + [hw_dim]
     outs = tf.reshape(outs, new_shape, name=scope+'/reshape1')

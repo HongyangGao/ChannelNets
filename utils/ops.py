@@ -10,11 +10,10 @@ def rev_conv2d(outs, scope, keep_r=1.0, train=True, data_format='NHWC'):
     hw_dim = np.prod(outs.shape.as_list()[2:])
     new_shape = [-1, outs.shape.as_list()[1]] + [hw_dim]
     outs = tf.reshape(outs, new_shape, name=scope+'/reshape1')
-    num_outs = int(outs.shape.as_list()[-1]/2)
-    kernel = num_outs+1
+    num_outs = outs.shape.as_list()[-1]
+    kernel = 32
     outs = conv1d(
-        outs, num_outs, kernel, scope+'/conv1d', 1, keep_r, train,
-        padding='valid')
+        outs, num_outs, kernel, scope+'/conv1d', 2, keep_r, train)
     outs = tf.reshape(outs, pre_shape, name=scope+'/reshape2')
     if data_format == 'NHWC':
         outs = tf.transpose(outs, perm=[0, 2, 3, 1], name=scope+'/trans2')

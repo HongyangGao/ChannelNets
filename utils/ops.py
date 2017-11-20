@@ -11,7 +11,7 @@ def rev_conv2d(outs, scope, keep_r=1.0, train=True, data_format='NHWC'):
     new_shape = [-1, outs.shape.as_list()[1]] + [hw_dim]
     outs = tf.reshape(outs, new_shape, name=scope+'/reshape1')
     num_outs = outs.shape.as_list()[-1]
-    kernel = 32
+    kernel = 128
     outs = conv1d(
         outs, num_outs, kernel, scope+'/conv1d', 2, keep_r, train)
     outs = tf.reshape(outs, pre_shape, name=scope+'/reshape2')
@@ -71,7 +71,7 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
     else:
         outs = dw_conv2d(
             outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
-            data_format=data_format, act_fn=tf.nn.relu6)
+            data_format=data_format, act_fn=None)
         outs = conv2d(
             outs, num_outs, (1, 1), scope+'/conv2', 1, keep_r, is_train,
             data_format=data_format)
@@ -81,7 +81,7 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
 def out_block(outs, scope, class_num, is_train, data_format='NHWC'):
     axes = [2, 3] if data_format == 'NCHW' else [1, 2]
     outs = tf.reduce_mean(outs, axes, name=scope+'/pool')
-    outs = dense(outs, class_num, scope, data_format=data_format)
+    outs = dense(outs, class_num, scope, is_train, data_format=data_format)
     return outs
 
 
@@ -162,11 +162,12 @@ def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True,
     return act_fn(outs) if act_fn else outs
 
 
-def dense(outs, dim, scope, data_format='NHWC'):
+def dense(outs, dim, scope, train=True, data_format='NHWC'):
     outs = tf.contrib.layers.fully_connected(
         outs, dim, activation_fn=None, scope=scope+'/dense',
         weights_initializer=tf.truncated_normal_initializer(stddev=0.09))
-    return outs
+    return batch_norm(outs, scope, train, None, data_format=data_format)
+    #return outs
 
 
 def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6,

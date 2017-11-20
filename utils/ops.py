@@ -51,7 +51,7 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
     for g in range(group):
         cur_outs = pure_conv2d(
             outs, num_outs, shape, scope+'/group_%s_conv0' % g, keep_r,
-            is_train, act_fn=None, data_format=data_format)
+            is_train, data_format=data_format)
         cur_outs = single_block(
             cur_outs, block_num, keep_r, is_train, scope+'/group_%s' % g,
             data_format)
@@ -65,13 +65,13 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
     if use_rev_conv:
         outs = dw_conv2d(
             outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
-            data_format=data_format, act_fn=None)
+            data_format=data_format)
         outs = rev_conv2d(
             outs, scope+'/conv2', keep_r, is_train, data_format)
     else:
         outs = dw_conv2d(
             outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
-            data_format=data_format, act_fn=None)
+            data_format=data_format)
         outs = conv2d(
             outs, num_outs, (1, 1), scope+'/conv2', 1, keep_r, is_train,
             data_format=data_format)
@@ -99,7 +99,7 @@ def conv_out_block(outs, scope, class_num, is_train):
 
 
 def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
-                padding='SAME', act_fn=tf.nn.relu6, data_format='NHWC'):
+                padding='SAME', data_format='NHWC'):
     stride = int(outs.shape[data_format.index('C')].value/num_outs)
     if data_format == 'NHWC':
         strides = (1, 1, stride)
@@ -110,8 +110,8 @@ def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
         outs = tf.expand_dims(outs, axis=1, name=scope+'/expand_dims')
         df = 'channels_first'
     outs = tf.layers.conv3d(
-        outs, 1, kernel, strides, padding=padding, activation=act_fn,
-        use_bias=False, data_format=df, name=scope+'/pure_conv',
+        outs, 1, kernel, strides, padding=padding, use_bias=False,
+        data_format=df, name=scope+'/pure_conv',
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.09))
     if data_format == 'NHWC':
         outs = tf.squeeze(outs, axis=[-1], name=scope+'/squeeze')
@@ -170,7 +170,7 @@ def dense(outs, dim, scope, train=True, data_format='NHWC'):
     #return outs
 
 
-def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6,
+def batch_norm(outs, scope, is_training=True, act_fn=relu1,
                data_format='NHWC'):
     return tf.contrib.layers.batch_norm(
         outs, decay=0.9997, scale=True, activation_fn=act_fn, fused=True,

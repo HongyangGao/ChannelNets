@@ -11,9 +11,9 @@ def rev_conv2d(outs, scope, keep_r=1.0, train=True, data_format='NHWC'):
     new_shape = [-1, outs.shape.as_list()[1]] + [hw_dim]
     outs = tf.reshape(outs, new_shape, name=scope+'/reshape1')
     num_outs = outs.shape.as_list()[-1]
-    kernel = 128
+    kernel = 64
     outs = conv1d(
-        outs, num_outs, kernel, scope+'/conv1d', 2, keep_r, train)
+        outs, num_outs, kernel, scope+'/conv1d', 1, keep_r, train)
     outs = tf.reshape(outs, pre_shape, name=scope+'/reshape2')
     if data_format == 'NHWC':
         outs = tf.transpose(outs, perm=[0, 2, 3, 1], name=scope+'/trans2')
@@ -65,7 +65,7 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
     if use_rev_conv:
         outs = dw_conv2d(
             outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
-            data_format=data_format, act_fn=tf.nn.crelu)
+            data_format=data_format, act_fn=None)
         outs = rev_conv2d(
             outs, scope+'/conv2', keep_r, is_train, data_format)
     else:
@@ -147,7 +147,7 @@ def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
 
 
 def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True,
-              act_fn=tf.nn.relu6, data_format='NHWC'):
+              act_fn=None, data_format='NHWC'):
     shape = list(kernel)+[outs.shape[data_format.index('C')].value, 1]
     weights = tf.get_variable(
         scope+'/conv/weight_depths', shape,
@@ -186,3 +186,8 @@ def global_pool(outs, scope, data_format):
     outs = tf.contrib.layers.avg_pool2d(
         outs, kernel, scope=scope, data_format=data_format)
     return outs
+
+
+def relu1(outs, name='relu1'):
+    with tf.variable_scope(name):
+        return tf.minimum(tf.maximum(outs, -1), 1)

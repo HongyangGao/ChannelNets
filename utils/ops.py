@@ -62,16 +62,13 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
 
 def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
              use_rev_conv=False, data_format='NHWC'):
+    outs = dw_conv2d(
+        outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
+        data_format=data_format)
     if use_rev_conv:
-        outs = dw_conv2d(
-            outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
-            data_format=data_format)
         outs = rev_conv2d(
             outs, scope+'/conv2', keep_r, is_train, data_format)
     else:
-        outs = dw_conv2d(
-            outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
-            data_format=data_format)
         outs = conv2d(
             outs, num_outs, (1, 1), scope+'/conv2', 1, keep_r, is_train,
             data_format=data_format)

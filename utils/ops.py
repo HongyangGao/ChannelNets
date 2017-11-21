@@ -167,7 +167,11 @@ def dense(outs, dim, scope, train=True, data_format='NHWC'):
         outs, dim, activation_fn=None, scope=scope+'/dense',
         weights_initializer=tf.truncated_normal_initializer(stddev=0.09))
     return batch_norm(outs, scope, train, None, data_format=data_format)
-    #return outs
+
+
+def relu1(outs, name='relu1'):
+    with tf.variable_scope(name):
+        return tf.minimum(tf.maximum(outs, -3), 3)
 
 
 def batch_norm(outs, scope, is_training=True, act_fn=relu1,
@@ -188,6 +192,3 @@ def global_pool(outs, scope, data_format):
     return outs
 
 
-def relu1(outs, name='relu1'):
-    with tf.variable_scope(name):
-        return tf.minimum(tf.maximum(outs, -1), 1)

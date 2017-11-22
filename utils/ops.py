@@ -6,7 +6,6 @@ def rev_conv2d(outs, scope, keep_r=1.0, train=True, data_format='NHWC'):
     if data_format == 'NHWC':
         outs = tf.transpose(outs, perm=[0, 3, 1, 2], name=scope+'/trans1')
     pre_shape = [-1] + outs.shape.as_list()[1:]
-    pre_shape[1] = int(pre_shape[1]/2)
     hw_dim = np.prod(outs.shape.as_list()[2:])
     new_shape = [-1, outs.shape.as_list()[1]] + [hw_dim]
     outs = tf.reshape(outs, new_shape, name=scope+'/reshape1')
@@ -163,15 +162,10 @@ def dense(outs, dim, scope, train=True, data_format='NHWC'):
     outs = tf.contrib.layers.fully_connected(
         outs, dim, activation_fn=None, scope=scope+'/dense',
         weights_initializer=tf.truncated_normal_initializer(stddev=0.09))
-    return batch_norm(outs, scope, train, None, data_format=data_format)
+    return batch_norm(outs, scope, train, data_format=data_format)
 
 
-def relu1(outs, name='relu1'):
-    with tf.variable_scope(name):
-        return tf.minimum(tf.maximum(outs, -3), 3)
-
-
-def batch_norm(outs, scope, is_training=True, act_fn=relu1,
+def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6,
                data_format='NHWC'):
     return tf.contrib.layers.batch_norm(
         outs, decay=0.9997, scale=True, activation_fn=act_fn, fused=True,

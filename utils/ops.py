@@ -59,21 +59,6 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
     return tf.add(outs, results, name=scope+'/add')
 
 
-def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
-             use_rev_conv=False, data_format='NHWC'):
-    outs = dw_conv2d(
-        outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
-        data_format=data_format)
-    if use_rev_conv:
-        outs = rev_conv2d(
-            outs, scope+'/conv2', keep_r, is_train, data_format)
-    else:
-        outs = conv2d(
-            outs, num_outs, (1, 1), scope+'/conv2', 1, keep_r, is_train,
-            data_format=data_format)
-    return outs
-
-
 def out_block(outs, scope, class_num, is_train, data_format='NHWC'):
     axes = [2, 3] if data_format == 'NCHW' else [1, 2]
     outs = tf.reduce_mean(outs, axes, name=scope+'/pool')
@@ -81,15 +66,17 @@ def out_block(outs, scope, class_num, is_train, data_format='NHWC'):
     return outs
 
 
-def conv_out_block(outs, scope, class_num, is_train):
-    # need to change the format
-    kernel = (3, 3, 9)
+def conv_out_block(outs, scope, class_num, is_train, data_format='NHWC'):
+    if data_format == 'NHWC':
+        outs = tf.transpose(outs, perm=[0, 3, 1, 2], name=scope+'/trans')
+    kernel = (9, 3, 3)
     for i in range(3):
-        outs = dw_conv2d(outs, (3, 3), 1, scope+'/dw_conv_%s' % i)
-        act_fn = None if i == 2 else tf.nn.relu6
+        outs = dw_conv2d(
+            outs, (3, 3), 1, scope+'/conv_%s' % i, data_format='NCHW')
         outs = pure_conv2d(
-            outs, outs.shape[3].value, kernel, scope+'/pure_%s' % i,
-            padding='VALID', act_fn=act_fn)
+            outs, outs.shape[1].value, kernel, scope+'/pure_%s' % i,
+            padding='VALID', data_format='NCHW')
+        outs = outs if i==2 else tf.nn.relu6(outs, scope+'/pure_%s' % i+'/relu')
     outs = tf.squeeze(outs, axis=[1, 2], name=scope+'/squeeze')
     return outs
 
@@ -165,6 +152,21 @@ def dense(outs, dim, scope, train=True, data_format='NHWC'):
     return batch_norm(outs, scope, train, data_format=data_format)
 
 
+def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
+             use_rev_conv=False, data_format='NHWC'):
+    outs = dw_conv2d(
+        outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
+        data_format=data_format)
+    if use_rev_conv:
+        outs = rev_conv2d(
+            outs, scope+'/conv2', keep_r, is_train, data_format)
+    else:
+        outs = conv2d(
+            outs, num_outs, (1, 1), scope+'/conv2', 1, keep_r, is_train,
+            data_format=data_format)
+    return outs
+
+
 def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6,
                data_format='NHWC'):
     return tf.contrib.layers.batch_norm(
@@ -181,5 +183,3 @@ def global_pool(outs, scope, data_format):
     outs = tf.contrib.layers.avg_pool2d(
         outs, kernel, scope=scope, data_format=data_format)
     return outs
-
-

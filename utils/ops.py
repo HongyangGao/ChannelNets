@@ -76,7 +76,7 @@ def conv_out_block(outs, scope, class_num, is_train, data_format='NHWC'):
         outs = pure_conv2d(
             outs, outs.shape[1].value, kernel, scope+'/pure_%s' % i,
             padding='VALID', data_format='NCHW')
-        outs = outs if i == 2 else tf.nn.relu6(outs, scope+'/pu_%s' % i+'/rlu')
+        #outs = outs if i == 2 else tf.nn.relu6(outs, scope+'/pu_%s' % i+'/rlu')
     outs = tf.squeeze(outs, axis=[2, 3], name=scope+'/squeeze')
     return outs
 

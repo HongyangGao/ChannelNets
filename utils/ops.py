@@ -16,7 +16,8 @@ def rev_conv2d(outs, scope, keep_r=1.0, train=True, data_format='NHWC'):
     outs = tf.reshape(outs, pre_shape, name=scope+'/reshape2')
     if data_format == 'NHWC':
         outs = tf.transpose(outs, perm=[0, 2, 3, 1], name=scope+'/trans2')
-    return batch_norm(outs, scope, train, data_format=data_format)
+    return outs
+    #return batch_norm(outs, scope, train, act_fn=None, data_format=data_format)
 
 
 def single_block(outs, block_num, keep_r, is_train, scope, data_format, *args):

@@ -28,7 +28,8 @@ class GoogleNetResize(imgaug.ImageAugmentor):
         area = h * w
         for _ in range(10):
             targetArea = self.rng.uniform(self.crop_area_fraction, 1.0) * area
-            aspectR = self.rng.uniform(self.aspect_ratio_low, self.aspect_ratio_high)
+            aspectR = self.rng.uniform(
+                self.aspect_ratio_low, self.aspect_ratio_high)
             ww = int(np.sqrt(targetArea * aspectR) + 0.5)
             hh = int(np.sqrt(targetArea / aspectR) + 0.5)
             if self.rng.uniform() < 0.5:
@@ -37,9 +38,11 @@ class GoogleNetResize(imgaug.ImageAugmentor):
                 x1 = 0 if w == ww else self.rng.randint(0, w - ww)
                 y1 = 0 if h == hh else self.rng.randint(0, h - hh)
                 out = img[y1:y1 + hh, x1:x1 + ww]
-                out = cv2.resize(out, (224, 224), interpolation=cv2.INTER_CUBIC)
+                out = cv2.resize(
+                    out, (224, 224), interpolation=cv2.INTER_CUBIC)
                 return out
-        out = imgaug.ResizeShortestEdge(224, interp=cv2.INTER_CUBIC).augment(img)
+        out = imgaug.ResizeShortestEdge(
+            224, interp=cv2.INTER_CUBIC).augment(img)
         out = imgaug.CenterCrop(224).augment(out)
         return out
 
@@ -55,7 +58,6 @@ def fbresnet_augmentor(isTrain):
                 [imgaug.BrightnessScale((0.6, 1.4), clip=False),
                  imgaug.Contrast((0.6, 1.4), clip=False),
                  imgaug.Saturation(0.4, rgb=False),
-                 # rgb-bgr conversion for the constants copied from fb.resnet.torch
                  imgaug.Lighting(0.1,
                                  eigval=np.asarray(
                                      [0.2175, 0.0188, 0.0045][::-1]) * 255.0,
@@ -140,7 +142,8 @@ def image_preprocess(image, bgr=True):
 
 
 def compute_loss_and_error(logits, label):
-    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=label)
+    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
+        logits=logits, labels=label)
     loss = tf.reduce_mean(loss, name='xentropy-loss')
 
     def prediction_incorrect(logits, label, topk=1, name='incorrect_vector'):
@@ -183,8 +186,9 @@ class ImageNetModel(ModelDesc):
 
         logits = self.get_logits(image)
         loss = compute_loss_and_error(logits, label)
-        wd_loss = regularize_cost('.*/weights', tf.contrib.layers.l2_regularizer(self.weight_decay),
-                                  name='l2_regularize_loss')
+        wd_loss = regularize_cost(
+            '.*/weights', tf.contrib.layers.l2_regularizer(self.weight_decay),
+            name='l2_regularize_loss')
         add_moving_summary(loss, wd_loss)
         self.cost = tf.add_n([loss, wd_loss], name='cost')
 
@@ -201,3 +205,4 @@ class ImageNetModel(ModelDesc):
         lr = tf.get_variable('learning_rate', initializer=0.1, trainable=False)
         tf.summary.scalar('learning_rate', lr)
         return tf.train.MomentumOptimizer(lr, 0.9, use_nesterov=True)
+        #return tf.train.AdamOptimizer(lr, epsilon=0.1)

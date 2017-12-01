@@ -70,16 +70,14 @@ def out_block(outs, scope, class_num, is_train, data_format='NHWC'):
 def conv_out_block(outs, scope, class_num, is_train, data_format='NHWC'):
     if data_format == 'NHWC':
         outs = tf.transpose(outs, perm=[0, 3, 1, 2], name=scope+'/trans')
-    kernel = (9, 3, 3)
-    for i in range(3):
-        outs = dw_conv2d(
-            outs, (3, 3), 1, scope+'/conv_%s' % i, data_format='NCHW')
-        outs = pure_conv2d(
-            outs, outs.shape[1].value, kernel, scope+'/pure_%s' % i,
-            padding='VALID', data_format='NCHW')
-        #outs = outs if i == 2 else tf.nn.relu6(outs, scope+'/pu_%s' % i+'/rlu')
+    kernel = (25, 7, 7)
+    outs = dw_conv2d(
+        outs, (3, 3), 1, scope+'/conv', data_format='NCHW')
+    outs = pure_conv2d(
+        outs, outs.shape[1].value, kernel, scope+'/pure',
+        padding='VALID', data_format='NCHW')
     outs = tf.squeeze(outs, axis=[2, 3], name=scope+'/squeeze')
-    return outs
+    return batch_norm(outs, scope, is_train, data_format='NCHW')
 
 
 def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
@@ -97,6 +95,9 @@ def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
         outs, 1, kernel, strides, padding=padding, use_bias=False,
         data_format=df, name=scope+'/pure_conv',
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.09))
+    if keep_r < 1.0:
+        outs = tf.contrib.layers.dropout(
+            outs, keep_r, is_training=train, scope=scope)
     if data_format == 'NHWC':
         outs = tf.squeeze(outs, axis=[-1], name=scope+'/squeeze')
     else:

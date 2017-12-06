@@ -33,13 +33,13 @@ def single_block(outs, block_num, keep_r, is_train, scope, data_format, *args):
 def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format,
                        group, *args):
     results = []
-    split_outs = tf.split(outs, group, 3, name=scope+'/split')
+    split_outs = tf.split(outs, group, data_format.index('C'), name=scope+'/split')
     for g in range(group):
         cur_outs = single_block(
             split_outs[g], block_num, keep_r, is_train, scope+'/group_%s' % g,
             data_format)
         results.append(cur_outs)
-    results = tf.concat(results, 3, name=scope+'/concat')
+    results = tf.concat(results, data_format.index('C'), name=scope+'/concat')
     return tf.add(outs, results, name=scope+'/add')
 
 

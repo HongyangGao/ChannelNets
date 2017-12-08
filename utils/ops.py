@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 
-def rev_conv2d(outs, scope, keep_r=1.0, train=True, data_format='NHWC'):
+def rev_conv2d(outs, scope, rev_kernel_size, keep_r=1.0, train=True, data_format='NHWC'):
     if data_format == 'NHWC':
         outs = tf.transpose(outs, perm=[0, 3, 1, 2], name=scope+'/trans1')
     pre_shape = [-1] + outs.shape.as_list()[1:]
@@ -10,7 +10,7 @@ def rev_conv2d(outs, scope, keep_r=1.0, train=True, data_format='NHWC'):
     new_shape = [-1, outs.shape.as_list()[1]] + [hw_dim]
     outs = tf.reshape(outs, new_shape, name=scope+'/reshape1')
     num_outs = outs.shape.as_list()[-1]
-    kernel = 64
+    kernel = rev_kernel_size
     outs = conv1d(
         outs, num_outs, kernel, scope+'/conv1d', 1, keep_r, train)
     outs = tf.reshape(outs, pre_shape, name=scope+'/reshape2')
@@ -33,13 +33,13 @@ def single_block(outs, block_num, keep_r, is_train, scope, data_format, *args):
 def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format,
                        group, *args):
     results = []
-    split_outs = tf.split(outs, group, 3, name=scope+'/split')
+    split_outs = tf.split(outs, group, data_format.index('C'), name=scope+'/split')
     for g in range(group):
         cur_outs = single_block(
             split_outs[g], block_num, keep_r, is_train, scope+'/group_%s' % g,
             data_format)
         results.append(cur_outs)
-    results = tf.concat(results, 3, name=scope+'/concat')
+    results = tf.concat(results, data_format.index('C'), name=scope+'/concat')
     return tf.add(outs, results, name=scope+'/add')
 
 
@@ -155,13 +155,13 @@ def dense(outs, dim, scope, train=True, data_format='NHWC'):
 
 
 def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
-             use_rev_conv=False, data_format='NHWC'):
+             use_rev_conv=False, rev_kernel_size=64, data_format='NHWC'):
     outs = dw_conv2d(
         outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
         data_format=data_format)
     if use_rev_conv:
         outs = rev_conv2d(
-            outs, scope+'/conv2', keep_r, is_train, data_format)
+            outs, scope+'/conv2', rev_kernel_size, keep_r, is_train, data_format)
     else:
         outs = conv2d(
             outs, num_outs, (1, 1), scope+'/conv2', 1, keep_r, is_train,

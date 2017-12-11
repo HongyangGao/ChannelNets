@@ -26,6 +26,7 @@ def configure():
     flags.DEFINE_integer('group_num', 4, 'group number')
     flags.DEFINE_float('keep_r', 0.9999, 'dropout keep rate')
 
+    flags.DEFINE_bool('all_chan_conv', False, 'all use channel conv or not')
     flags.DEFINE_bool('use_rev_conv', False, 'use reverse conv or not')
     flags.DEFINE_integer('rev_kernel_size', 64, 'reverse kernel size for channel')
     flags.DEFINE_string(

@@ -151,7 +151,16 @@ def dense(outs, dim, scope, train=True, data_format='NHWC'):
     outs = tf.contrib.layers.fully_connected(
         outs, dim, activation_fn=None, scope=scope+'/dense',
         weights_initializer=tf.truncated_normal_initializer(stddev=0.09))
+    tf_vars = tf.trainable_variables()
+    add_vars_summary(tf_vars)
     return batch_norm(outs, scope, train, data_format=data_format)
+
+
+def add_vars_summary(tf_vars):
+    for var in tf_vars:
+        print(var)
+        total_params += var.shape.num_elements()
+    print("The total number of params --------->", total_params)
 
 
 def dw_block(outs, num_outs, stride, scope, keep_r, is_train,

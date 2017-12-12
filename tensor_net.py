@@ -58,7 +58,7 @@ def get_config(model, conf):
                 dataset_val, infs, list(range(nr_tower))))
     return TrainConfig(
         model=model, dataflow=dataset_train, callbacks=callbacks,
-        steps_per_epoch=5000, max_epoch=80, nr_tower=nr_tower)
+        steps_per_epoch=2, max_epoch=1, nr_tower=nr_tower)
 
 
 def run(model):

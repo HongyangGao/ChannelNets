@@ -160,14 +160,18 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
     outs = dw_conv2d(
         outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
         data_format=data_format)
-    if use_rev_conv:
+    kernel = (1, 1, rev_kernel_size) if data_format=='NHWC' else (rev_kernel_size, 1, 1)
+    if use_rev_conv == 1:
         outs = rev_conv2d(
             outs, scope+'/conv2', rev_kernel_size, keep_r, is_train, data_format)
     elif all_chan_conv:
-        kernel = (1, 1, rev_kernel_size) if data_format=='NHWC' else (rev_kernel_size, 1, 1)
         outs = pure_conv2d(
             outs, num_outs, kernel, scope+'/conv2', keep_r, is_train,
             data_format=data_format)
+    elif use_rev_conv == 2:
+        outs = pure_conv2d(
+            outs, outs.shape[data_format.index('C')].value, kernel,
+            scope+'/conv2', keep_r, is_train, data_format=data_format)
     else:
         outs = conv2d(
             outs, num_outs, (1, 1), scope+'/conv2', 1, keep_r, is_train,

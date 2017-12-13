@@ -11,7 +11,7 @@ from tensorpack.dataflow import (
 from tensorpack.predict import PredictConfig, SimpleDatasetPredictor
 from tensorpack.utils.stats import RatioCounter
 from tensorpack.models import regularize_cost
-from tensorpack.tfutils.summary import add_moving_summary
+from tensorpack.tfutils.summary import add_moving_summary, add_param_summary
 
 
 class GoogleNetResize(imgaug.ImageAugmentor):
@@ -156,6 +156,9 @@ def compute_loss_and_error(logits, label):
 
     wrong = prediction_incorrect(logits, label, 5, name='wrong-top5')
     add_moving_summary(tf.reduce_mean(wrong, name='train-error-top5'))
+    add_param_summary(
+        ('.*/weights', ['histogram', 'rms', 'sparsity']),
+    )
     return loss
 
 

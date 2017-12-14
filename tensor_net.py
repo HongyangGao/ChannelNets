@@ -77,3 +77,15 @@ def run(model):
             config.session_init = get_model_loader(
                 model.conf.logdir+'/'+model.conf.reload_step)
         SyncMultiGPUTrainerParameterServer(config).train()
+
+
+def vis(model):
+    sess = tf.Session()
+    instance = Model(model, model.conf.data_format)
+    sess.run(tf.global_variables_initializer())
+    trainable_vars = tf.trainable_variables()
+    saver = tf.train.Saver(var_list=trainable_vars, max_to_keep=0)
+    model_path = 'logdir1/model-400000'
+    saver.restore(sess, model_path)
+    import ipdb; ipdb.set_trace()
+

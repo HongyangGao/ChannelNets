@@ -80,12 +80,18 @@ def run(model):
 
 
 def vis(model):
+    import tensorflow as tf
+    import scipy.io as sio
     sess = tf.Session()
     instance = Model(model, model.conf.data_format)
+    inputs = tf.placeholder(tf.float32, [None, 3, 224, 224])
+    predicts = instance.get_logits(inputs)
     sess.run(tf.global_variables_initializer())
     trainable_vars = tf.trainable_variables()
     saver = tf.train.Saver(var_list=trainable_vars, max_to_keep=0)
-    model_path = 'logdir1/model-400000'
+    model_path = 'logdir1_vis/model-400000'
     saver.restore(sess, model_path)
-    import ipdb; ipdb.set_trace()
+    var = trainable_vars[-4]
+    var_v = sess.run(var)
+    sio.savemat('dense_weights.mat', {'data':var_v})
 

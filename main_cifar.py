@@ -45,5 +45,6 @@ def main(_):
 if __name__ == '__main__':
     # configure which gpu or cpu to use
     os.environ['TENSORPACK_PIPEDIR'] = '/tmp'
+    os.environ['TENSORPACK_DATASET'] = '/tempspace2/hgao/data/'
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     tf.app.run()

@@ -190,6 +190,7 @@ class ImageNetModel(ModelDesc):
             '.*/weights', tf.contrib.layers.l2_regularizer(self.weight_decay),
             name='l2_regularize_loss')
         add_moving_summary(loss, wd_loss)
+        add_param_summary(('.*/weights', ['histogram']))
         self.cost = tf.add_n([loss, wd_loss], name='cost')
 
     @abstractmethod

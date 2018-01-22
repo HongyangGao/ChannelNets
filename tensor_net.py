@@ -3,7 +3,8 @@ from tensorpack import \
     (logger, QueueInput, ModelSaver, ScheduledHyperParamSetter,
      InferenceRunner, HumanHyperParamSetter, ClassificationError,
      DataParallelInferenceRunner)
-from tensorpack.train import TrainConfig, SyncMultiGPUTrainerParameterServer
+from tensorpack.train import (
+    TrainConfig, SyncMultiGPUTrainerParameterServer, launch_train_with_config)
 from tensorpack.dataflow import FakeData
 from tensorpack.tfutils import get_model_loader
 from tensorpack.utils.gpu import get_nr_gpu
@@ -76,4 +77,5 @@ def run(model):
         if model.conf.reload_step:
             config.session_init = get_model_loader(
                 model.conf.logdir+'/'+model.conf.reload_step)
-        SyncMultiGPUTrainerParameterServer(config).train()
+        trainer = SyncMultiGPUTrainerParameterServer(max(get_nr_gpu(), 1))
+        launch_train_with_config(config, trainer)

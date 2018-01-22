@@ -48,12 +48,17 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
     num_outs = int(outs.shape[data_format.index('C')].value/group)
     shape = [1, 1, 4*group] if data_format == 'NHWC' else [4*group, 1, 1]
     results = []
+    conv_outs = pure_conv2d(
+        outs, num_outs, shape, scope+'/pure_conv', keep_r,
+        is_train, chan_num=group, data_format=data_format)
+    axis = -1 if data_format=='NHWC' else 1
+    conv_outs = tf.unstack(conv_outs, axis=axis, name=scope+'/unstack')
     for g in range(group):
-        cur_outs = pure_conv2d(
-            outs, num_outs, shape, scope+'/group_%s_conv0' % g, keep_r,
-            is_train, data_format=data_format)
+        #cur_outs = pure_conv2d(
+        #    outs, num_outs, shape, scope+'/group_%s_conv0' % g, keep_r,
+        #    is_train, data_format=data_format)
         cur_outs = single_block(
-            cur_outs, block_num, keep_r, is_train, scope+'/group_%s' % g,
+            conv_outs[g], block_num, keep_r, is_train, scope+'/group_%s' % g,
             data_format)
         results.append(cur_outs)
     results = tf.concat(results, data_format.index('C'), name=scope+'/concat')
@@ -77,31 +82,31 @@ def conv_out_block(outs, scope, class_num, is_train, data_format='NHWC'):
         outs, outs.shape[1].value, kernel, scope+'/pure',
         padding='VALID', data_format='NCHW')
     outs = tf.squeeze(outs, axis=[2, 3], name=scope+'/squeeze')
-    return batch_norm(outs, scope, is_train, data_format='NCHW')
+    return batch_norm(outs, scope, is_train, tf.nn.relu6, data_format='NCHW')
 
 
 def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
-                padding='SAME', data_format='NHWC'):
+                padding='SAME', chan_num=1, data_format='NHWC'):
     stride = int(outs.shape[data_format.index('C')].value/num_outs)
     if data_format == 'NHWC':
         strides = (1, 1, stride)
-        outs = tf.expand_dims(outs, axis=-1, name=scope+'/expand_dims')
+        axis = -1
         df = 'channels_last'
     else:
         strides = (stride, 1, 1)
-        outs = tf.expand_dims(outs, axis=1, name=scope+'/expand_dims')
+        axis = 1
         df = 'channels_first'
+    outs = tf.expand_dims(outs, axis=axis, name=scope+'/expand_dims')
     outs = tf.layers.conv3d(
-        outs, 1, kernel, strides, padding=padding, use_bias=False,
+        outs, chan_num, kernel, strides, padding=padding, use_bias=False,
         data_format=df, name=scope+'/pure_conv',
+        #bias_initializer=tf.truncated_normal_initializer(stddev=0.09),
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.09))
     if keep_r < 1.0:
         outs = tf.contrib.layers.dropout(
             outs, keep_r, is_training=train, scope=scope)
-    if data_format == 'NHWC':
-        outs = tf.squeeze(outs, axis=[-1], name=scope+'/squeeze')
-    else:
-        outs = tf.squeeze(outs, axis=[1], name=scope+'/squeeze')
+    if chan_num == 1:
+        outs = tf.squeeze(outs, axis=[axis], name=scope+'/squeeze')
     return outs
 
 
@@ -119,7 +124,7 @@ def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
 
 
 def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
-           data_format='NHWC'):
+           act_fn=tf.nn.relu6, data_format='NHWC'):
     outs = tf.contrib.layers.conv2d(
         outs, num_outs, kernel, scope=scope, stride=stride,
         data_format=data_format, activation_fn=None,
@@ -128,7 +133,7 @@ def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
     if keep_r < 1.0:
         outs = tf.contrib.layers.dropout(
             outs, keep_r, is_training=train, scope=scope)
-    return batch_norm(outs, scope, train, data_format=data_format)
+    return batch_norm(outs, scope, train, act_fn=act_fn, data_format=data_format)
 
 
 def dw_conv2d(outs, kernel, stride, scope, keep_r=1.0, train=True,
@@ -151,11 +156,14 @@ def dense(outs, dim, scope, train=True, data_format='NHWC'):
     outs = tf.contrib.layers.fully_connected(
         outs, dim, activation_fn=None, scope=scope+'/dense',
         weights_initializer=tf.truncated_normal_initializer(stddev=0.09))
-    return batch_norm(outs, scope, train, data_format=data_format)
+    #outs = batch_norm(
+    #    outs, scope, train, None, data_format=data_format)
+    return outs
 
 
 def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
-             use_rev_conv=False, rev_kernel_size=64, data_format='NHWC'):
+             use_rev_conv=False, rev_kernel_size=64, act_fn=tf.nn.relu6,
+             data_format='NHWC'):
     outs = dw_conv2d(
         outs, (3, 3), stride, scope+'/conv1', keep_r, is_train,
         data_format=data_format)
@@ -165,15 +173,15 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
     else:
         outs = conv2d(
             outs, num_outs, (1, 1), scope+'/conv2', 1, keep_r, is_train,
-            data_format=data_format)
+            act_fn=act_fn, data_format=data_format)
     return outs
 
 
 def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6,
-               data_format='NHWC'):
+               data_format='NHWC', not_final=True):
     return tf.contrib.layers.batch_norm(
-        outs, decay=0.9997, scale=True, activation_fn=act_fn, fused=True,
-        epsilon=1e-3, is_training=is_training, data_format=data_format,
+        outs, decay=0.9997, scale=not_final, center=not_final, activation_fn=act_fn,
+        fused=True, epsilon=1e-3, is_training=is_training, data_format=data_format,
         scope=scope+'/batch_norm')
 
 
@@ -184,4 +192,15 @@ def global_pool(outs, scope, data_format):
         kernel = outs.shape.as_list()[2:]
     outs = tf.contrib.layers.avg_pool2d(
         outs, kernel, scope=scope, data_format=data_format)
+    return outs
+
+
+def skip_pool(outs, scope, data_format):
+    df = 'channels_last' if data_format=='NHWC' else 'channels_first'
+    avg_outs = tf.layers.average_pooling2d(
+        outs, 2, 2, data_format=df, name=scope+'/avg')
+    max_outs = tf.layers.max_pooling2d(
+        outs, 2, 2, data_format=df, name=scope+'/max')
+    outs = tf.concat(
+        [avg_outs, max_outs], axis=data_format.index('C'), name=scope+'/concat')
     return outs

@@ -82,7 +82,7 @@ def conv_out_block(outs, scope, class_num, is_train, data_format='NHWC'):
         outs, outs.shape[1].value, kernel, scope+'/pure',
         padding='VALID', data_format='NCHW')
     outs = tf.squeeze(outs, axis=[2, 3], name=scope+'/squeeze')
-    return batch_norm(outs, scope, is_train, tf.nn.relu6, data_format='NCHW')
+    return outs
 
 
 def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
@@ -100,7 +100,6 @@ def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
     outs = tf.layers.conv3d(
         outs, chan_num, kernel, strides, padding=padding, use_bias=False,
         data_format=df, name=scope+'/pure_conv',
-        #bias_initializer=tf.truncated_normal_initializer(stddev=0.09),
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.09))
     if keep_r < 1.0:
         outs = tf.contrib.layers.dropout(
@@ -156,8 +155,6 @@ def dense(outs, dim, scope, train=True, data_format='NHWC'):
     outs = tf.contrib.layers.fully_connected(
         outs, dim, activation_fn=None, scope=scope+'/dense',
         weights_initializer=tf.truncated_normal_initializer(stddev=0.09))
-    #outs = batch_norm(
-    #    outs, scope, train, None, data_format=data_format)
     return outs
 
 
@@ -197,10 +194,6 @@ def global_pool(outs, scope, data_format):
 
 def skip_pool(outs, scope, data_format):
     df = 'channels_last' if data_format=='NHWC' else 'channels_first'
-    avg_outs = tf.layers.average_pooling2d(
+    outs = tf.layers.average_pooling2d(
         outs, 2, 2, data_format=df, name=scope+'/avg')
-    max_outs = tf.layers.max_pooling2d(
-        outs, 2, 2, data_format=df, name=scope+'/max')
-    outs = tf.concat(
-        [avg_outs, max_outs], axis=data_format.index('C'), name=scope+'/concat')
     return outs

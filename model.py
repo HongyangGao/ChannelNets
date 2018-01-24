@@ -57,8 +57,8 @@ class MobileNet(object):
             outs, cur_out_num, 1, 'conv_3_1', self.conf.keep_r,
             self.conf.is_train, self.conf.use_rev_conv,
             self.conf.rev_kernel_size,
+            #act_fn=None,
             data_format=self.conf.data_format)
-        #outs = tf.add(outs, cur_outs, name='add3')
         outs = self.get_out_func()(
             outs, 'out', self.conf.class_num, self.conf.is_train,
             data_format=self.conf.data_format)

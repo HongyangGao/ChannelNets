@@ -23,10 +23,10 @@ def rev_conv2d(outs, scope, rev_kernel_size, keep_r=1.0, train=True, data_format
 def single_block(outs, block_num, keep_r, is_train, scope, data_format, *args):
     num_outs = outs.shape[data_format.index('C')].value
     for i in range(block_num):
-        cur_outs = dw_block(
+        outs = dw_block(
             outs, num_outs, 1, scope+'/conv_%s' % i, keep_r, is_train,
             data_format=data_format)
-        outs = tf.add(outs, cur_outs, name=scope+'/add_%s' % i)
+        #outs = tf.add(outs, cur_outs, name=scope+'/add_%s' % i)
     return outs
 
 
@@ -40,7 +40,7 @@ def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format,
             data_format)
         results.append(cur_outs)
     results = tf.concat(results, data_format.index('C'), name=scope+'/concat')
-    return tf.add(outs, results, name=scope+'/add')
+    return results#tf.add(outs, results, name=scope+'/add')
 
 
 def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
@@ -62,7 +62,7 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
             data_format)
         results.append(cur_outs)
     results = tf.concat(results, data_format.index('C'), name=scope+'/concat')
-    return tf.add(outs, results, name=scope+'/add')
+    return results#tf.add(outs, results, name=scope+'/add')
 
 
 def out_block(outs, scope, class_num, is_train, data_format='NHWC'):

@@ -13,9 +13,10 @@ class MobileNet(object):
             images, cur_out_num, (3, 3), 'conv_s', train=self.conf.is_train,
             stride=2, act_fn=None, data_format=self.conf.data_format)
         cur_out_num *= 2
-        outs = ops.dw_block(  # 112 * 112 * 64
+        cur_outs = ops.dw_block(  # 112 * 112 * 64
             outs, cur_out_num, 1, 'conv_1_0', self.conf.keep_r,
             self.conf.is_train, data_format=self.conf.data_format)
+        outs = tf.concat([outs, cur_outs], axis=1, name='add0')
         cur_out_num *= 2
         outs = ops.dw_block(  # 56 * 56 * 128
             outs, cur_out_num, 2, 'conv_1_1', self.conf.keep_r,
@@ -23,7 +24,8 @@ class MobileNet(object):
         cur_outs = ops.dw_block(  # 56 * 56 * 128
             outs, cur_out_num, 1, 'conv_1_2', self.conf.keep_r,
             self.conf.is_train, data_format=self.conf.data_format)
-        outs = tf.add(outs, cur_outs, name='add1')
+        outs = tf.concat([outs, cur_outs], axis=1, name='add1')
+        #outs = tf.add(outs, cur_outs, name='add1')
         cur_out_num *= 2
         outs = ops.dw_block(  # 28 * 28 * 256
             outs, cur_out_num, 2, 'conv_1_3', self.conf.keep_r,
@@ -41,10 +43,10 @@ class MobileNet(object):
             outs, self.conf.block_num, self.conf.keep_r, self.conf.is_train,
             'conv_2_1', self.conf.data_format, self.conf.group_num)
         outs = tf.add(outs, cur_outs, name='add21')
-        cur_outs = self.get_block_func()(  # 14 * 14 * 512
+        outs = self.get_block_func()(  # 14 * 14 * 512
             outs, self.conf.block_num, self.conf.keep_r, self.conf.is_train,
             'conv_2_2', self.conf.data_format, self.conf.group_num)
-        outs = tf.add(outs, cur_outs, name='add22')
+        #outs = tf.add(outs, cur_outs, name='add22')
         cur_outs = self.get_block_func()(  # 14 * 14 * 512
             outs, self.conf.block_num, self.conf.keep_r, self.conf.is_train,
             'conv_2_3', self.conf.data_format, self.conf.group_num)

@@ -17,7 +17,6 @@ def rev_conv2d(outs, scope, rev_kernel_size, keep_r=1.0, train=True, data_format
     if data_format == 'NHWC':
         outs = tf.transpose(outs, perm=[0, 2, 3, 1], name=scope+'/trans2')
     return outs
-    #return batch_norm(outs, scope, train, act_fn=None, data_format=data_format)
 
 
 def single_block(outs, block_num, keep_r, is_train, scope, data_format, *args):
@@ -40,7 +39,7 @@ def simple_group_block(outs, block_num, keep_r, is_train, scope, data_format,
             data_format)
         results.append(cur_outs)
     results = tf.concat(results, data_format.index('C'), name=scope+'/concat')
-    return results#tf.add(outs, results, name=scope+'/add')
+    return results
 
 
 def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
@@ -54,15 +53,12 @@ def conv_group_block(outs, block_num, keep_r, is_train, scope, data_format,
     axis = -1 if data_format=='NHWC' else 1
     conv_outs = tf.unstack(conv_outs, axis=axis, name=scope+'/unstack')
     for g in range(group):
-        #cur_outs = pure_conv2d(
-        #    outs, num_outs, shape, scope+'/group_%s_conv0' % g, keep_r,
-        #    is_train, data_format=data_format)
         cur_outs = single_block(
             conv_outs[g], block_num, keep_r, is_train, scope+'/group_%s' % g,
             data_format)
         results.append(cur_outs)
     results = tf.concat(results, data_format.index('C'), name=scope+'/concat')
-    return results#tf.add(outs, results, name=scope+'/add')
+    return results
 
 
 def out_block(outs, scope, class_num, is_train, data_format='NHWC'):

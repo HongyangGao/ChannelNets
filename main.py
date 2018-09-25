@@ -22,7 +22,7 @@ def configure():
     flags.DEFINE_string('test_step', '', 'Test or predict model at this step')
     # network architecture
     flags.DEFINE_integer('ch_num', 32, 'channel number')
-    flags.DEFINE_integer('block_num', 5, 'block number')
+    flags.DEFINE_integer('block_num', 2, 'block number')
     flags.DEFINE_integer('group_num', 2, 'group number')
     flags.DEFINE_float('keep_r', 0.9999, 'dropout keep rate')
 

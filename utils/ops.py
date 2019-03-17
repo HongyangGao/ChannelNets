@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tensorpack as tp
 import numpy as np
 
 
@@ -98,8 +99,7 @@ def pure_conv2d(outs, num_outs, kernel, scope, keep_r=1.0, train=True,
         data_format=df, name=scope+'/pure_conv',
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.09))
     if keep_r < 1.0:
-        outs = tf.contrib.layers.dropout(
-            outs, keep_r, is_training=train, scope=scope)
+        outs = dropout(outs, keep_r, scope=scope)
     if chan_num == 1:
         outs = tf.squeeze(outs, axis=[axis], name=scope+'/squeeze')
     return outs
@@ -113,8 +113,7 @@ def conv1d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.09),
         data_format=df, name=scope+'/conv1d')
     if keep_r < 1.0:
-        outs = tf.contrib.layers.dropout(
-            outs, keep_r, is_training=train, scope=scope)
+        outs = dropout(outs, keep_r, scope=scope)
     return outs
 
 
@@ -126,8 +125,7 @@ def conv2d(outs, num_outs, kernel, scope, stride=1, keep_r=1.0, train=True,
         weights_initializer=tf.truncated_normal_initializer(stddev=0.09),
         biases_initializer=None)
     if keep_r < 1.0:
-        outs = tf.contrib.layers.dropout(
-            outs, keep_r, is_training=train, scope=scope)
+        outs = dropout(outs, keep_r, scope=scope)
     return batch_norm(outs, scope, train, act_fn=act_fn, data_format=data_format)
 
 
@@ -170,12 +168,25 @@ def dw_block(outs, num_outs, stride, scope, keep_r, is_train,
     return outs
 
 
-def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6,
-               data_format='NHWC', not_final=True):
+def batch_norm_old(outs, scope, is_training=True, act_fn=tf.nn.relu6,
+                   data_format='NHWC', not_final=True):
     return tf.contrib.layers.batch_norm(
         outs, decay=0.9997, scale=not_final, center=not_final, activation_fn=act_fn,
         fused=True, epsilon=1e-3, is_training=is_training, data_format=data_format,
         scope=scope+'/batch_norm')
+
+
+def batch_norm(outs, scope, is_training=True, act_fn=tf.nn.relu6,
+               data_format='NHWC', not_final=True):
+    df = 'channels_last' if data_format=='NHWC' else 'channels_first'
+    outs = tp.BatchNorm(scope+'/bn', outs, data_format=df)
+    return outs if not act_fn else act_fn(outs, name=scope+'/act')
+
+
+def dropout(outs, keep_r, scope):
+    if keep_r < 1.0:
+        outs = tp.Dropout(scope+'/dropout', outs, rate=1-keep_r)
+    return outs
 
 
 def global_pool(outs, scope, data_format):

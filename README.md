@@ -13,10 +13,11 @@ Detailed information about ChannelNets is provided in [arXiv tech report] (https
 ## Citation
 
 ```
-@article{gao2018channelnets,
+@inproceedings{gao2018channelnets,
   title={ChannelNets: Compact and Efficient Convolutional Neural Networks via Channel-Wise Convolutions},
-  author={Hongyang Gao and Zhengyang Wang and Shuiwang Ji},
-  journal={arXiv preprint arXiv:1809.01330},
+  author={Gao, Hongyang and Wang, Zhengyang and Ji, Shuiwang},
+  booktitle={Advances in Neural Information Processing Systems},
+  pages={5203--5211},
   year={2018}
 }
 ```

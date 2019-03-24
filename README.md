@@ -8,7 +8,7 @@ Created by [Hongyang Gao](http://people.tamu.edu/~hongyang.gao/),
 
 ChannelNets are compact and efficent CNN via Channel-wise convolutions. It has been accepted in NIPS2018.
 
-Detailed information about ChannelNets is provided in [arXiv tech report] (https://arxiv.org/abs/1809.01330).
+Detailed information about ChannelNets is provided in https://papers.nips.cc/paper/7766-channelnets-compact-and-efficient-convolutional-neural-networks-via-channel-wise-convolutions.pdf.
 
 ## Citation
 
